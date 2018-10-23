@@ -145,7 +145,7 @@ int main(int argc, const char *argv[])
 	{
 		if (verbose) printf("loading occl. mask %s\n", occl_path);
 		int w1, h1, c1;
-		occl_in = vpp_init_input(flow_path, &w1, &h1, &c1);
+		occl_in = vpp_init_input(occl_path, &w1, &h1, &c1);
 
 		if (!occl_in)
 		{

@@ -150,10 +150,11 @@ int main(int argc, char *argv[])
 	float *u = malloc(2*nx*ny*sizeof(float));
 	float *v = u + nx*ny;;
 
+	// FIXME: for conversion between split layout to channels layout
+	float *uv = malloc(2*nx*ny*sizeof(float));
+
 	// read first frame
 	vpp_read_frame(vid_in, I0, nx, ny, c);
-
-	fprintf(stderr, "%d - %d\n", nx, ny);
 
 	//read the images and compute the optical flow
 //	int f = 1;
@@ -187,8 +188,15 @@ int main(int argc, char *argv[])
 		);
 #endif
 
+		//convert to vector layout
+		for (int i = 0; i < nx*ny; ++i)
+		{
+			uv[2*i + 0] = u[i];
+			uv[2*i + 1] = v[i];
+		}
+
 		//save the optical flow
-		vpp_write_frame(flow_out, u, nx, ny, 2);
+		vpp_write_frame(flow_out, uv, nx, ny, 2);
 
 		//swap buffers
 		float *tmp = I0; I0 = I1; I1 = tmp;
@@ -197,6 +205,7 @@ int main(int argc, char *argv[])
 
 	//delete allocated memory
 	free(u);
+	free(uv);
 	free(I0);
 	free(I1);
 

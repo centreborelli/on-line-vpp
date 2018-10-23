@@ -94,14 +94,14 @@ int main(int argc, const char *argv[])
 	FILE* nisy_in = vpp_init_input(nisy_path, &w, &h, &c);
 	if (!nisy_in)
 	{
-		fprintf(stderr, "%s: cannot initialize input '%s'\n", argv[0], nisy_path);
+		fprintf(stderr, "kalman: cannot initialize input '%s'\n", nisy_path);
 		return EXIT_FAILURE;
 	}
 
 	FILE* deno_out = vpp_init_output(deno_path, w, h, c);
 	if (!deno_out)
 	{
-		fprintf(stderr, "%s: cannot initialize output '%s'\n", argv[0], deno_path);
+		fprintf(stderr, "kalman: cannot initialize output '%s'\n", deno_path);
 		return EXIT_FAILURE;
 	}
 
@@ -128,7 +128,7 @@ int main(int argc, const char *argv[])
 
 		if (!flow_in)
 		{
-			fprintf(stderr, "%s: cannot initialize input '%s'\n", argv[0], flow_path);
+			fprintf(stderr, "kalman: cannot initialize input '%s'\n", flow_path);
 			return free(nisy1), free(deno1), EXIT_FAILURE;
 		}
 
@@ -149,7 +149,7 @@ int main(int argc, const char *argv[])
 
 		if (!occl_in)
 		{
-			fprintf(stderr, "%s: cannot initialize input '%s'\n", argv[0], occl_path);
+			fprintf(stderr, "kalman: cannot initialize input '%s'\n", occl_path);
 			return free(nisy1), free(deno1), EXIT_FAILURE;
 		}
 

@@ -1,8 +1,6 @@
-# Frame-by-Frame Video Processing Pipeline
+# Video Restoration Pipeline
 
-This a video processing pipeline with the objective of enhancing the quality of
-a video, built around [vpp](https://github.com/kidanger/vpp). It consists of the 
-following tools:
+This an *on-line* video processing pipeline with the objective of enhancing the quality of a video, built around [vpp](https://github.com/kidanger/vpp). By on-line we mean that it works a frame-by-frame. It consists of a series of processes connected by unix pipes. These are some of the available tools:
 - video stabilization **TODO**
 - optical flow
 - noise estimation **TODO**

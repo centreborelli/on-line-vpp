@@ -385,33 +385,30 @@ unsigned buildMask(CImage &i_im, int *o_mask,
   return count;
 }
 
-//! Ponomarenko et al. AVIRIS noise estimation algorithm.
-/*!
-  \param argc Number of arguments of the program
-  \param **argv Arguments of the program
-*/
-void algorithm(int argc, char **argv) {
+int parseCommandLine(int argc, char **argv, AlgoOptions &algo_opts,
+                     char * const input_name) {
+
   vector <OptStruct *> options;
   vector <ParStruct *> parameters;
-  //
-  OptStruct owin   =  {"w:", 0, "8", NULL, "Block side"};
-  options.push_back(&owin);
-  OptStruct opercentile = {"p:", 0, "0.005", NULL, "Percentile"};
-  options.push_back(&opercentile);
-  OptStruct ore = {"r", 0, NULL, NULL, "Flag to remove equal pixels"};
-  options.push_back(&ore);  
-  OptStruct obins = {"b:", 0, "0", NULL, "Number of bins"};
-  options.push_back(&obins);
-  OptStruct oD = {"D:", 0, "7", NULL, "Filtering distance"};
-  options.push_back(&oD);
+
+  OptStruct owin         = {"w:", 0, "8", NULL, "Block side"};
+  OptStruct opercentile  = {"p:", 0, "0.005", NULL, "Percentile"};
+  OptStruct ore          = {"r" , 0, NULL, NULL, "Flag to remove equal pixels"};
+  OptStruct obins        = {"b:", 0, "0", NULL, "Number of bins"};
+  OptStruct oD           = {"D:", 0, "7", NULL, "Filtering distance"};
   OptStruct ofiltercurve = {"g:", 0, "5", NULL, "Filter curve iterations"};
-  options.push_back(&ofiltercurve);  
-  OptStruct omeanMethod = {"m:", 0, "2", NULL, "Mean computation method"};
-  options.push_back(&omeanMethod);  
+  OptStruct omeanMethod  = {"m:", 0, "2", NULL, "Mean computation method"};
+  options.push_back(&owin);
+  options.push_back(&opercentile);
+  options.push_back(&ore);
+  options.push_back(&obins);
+  options.push_back(&oD);
+  options.push_back(&ofiltercurve);
+  options.push_back(&omeanMethod);
 
   ParStruct pinput = {"input", NULL, "input file"};
   parameters.push_back(&pinput);
-  //
+
   if (!parsecmdline("ponomarenko", "Ponomarenko SD noise estimation algorithm",
           argc, argv, options, parameters)) {
     printf("\n");
@@ -421,25 +418,44 @@ void algorithm(int argc, char **argv) {
     exit(-1);
   }
 
+  algo_opts.w = atoi(owin.value);
+  algo_opts.T = get_T(algo_opts.w);
+  algo_opts.p = atof(opercentile.value);
+  algo_opts.num_bins = atoi(obins.value);
+  algo_opts.D = atoi(oD.value);
+  algo_opts.curve_filter_iterations = atoi(ofiltercurve.value);
+  algo_opts.mean_method = atoi(omeanMethod.value);
+  algo_opts.remove_equal_pixels_blocks = ore.flag;
+
+  strcpy(input_name, (char*)pinput.value);
+
+  return 0;
+}
+
+//! Ponomarenko et al. AVIRIS noise estimation algorithm.
+/*!
+  \param argc Number of arguments of the program
+  \param **argv Arguments of the program
+*/
+void algorithm(AlgoOptions const& opts, CImage& input,
+               float *& output_means, float *& output_stds, int &num_bins) {
+
   // Read parameters
-  int w = atoi(owin.value);
-  int T = get_T(w);
-  float p = atof(opercentile.value);
-  int num_bins = atoi(obins.value);
-  int D = atoi(oD.value);
-  int curve_filter_iterations = atoi(ofiltercurve.value);
-  int mean_method = atoi(omeanMethod.value);
-  bool remove_equal_pixels_blocks = ore.flag;
+  int w = opts.w;
+  int T = opts.T;
+  float p = opts.p;
+  num_bins = opts.num_bins;
+  int D = opts.D;
+  int curve_filter_iterations = opts.curve_filter_iterations;
+  int mean_method = opts.mean_method;
+  bool remove_equal_pixels_blocks = opts.remove_equal_pixels_blocks;
+  bool custom_percentile = opts.custom_percentile;
 
   // Parallelization config
   #ifdef _OPENMP
   omp_set_num_threads(omp_get_num_procs());
   #endif
 
-  // Load input image
-  CImage input;
-  input.load((char*)pinput.value);
-  
   // Get image properties
   int Nx = input.get_width();
   int Ny = input.get_height();
@@ -450,8 +466,6 @@ void algorithm(int argc, char **argv) {
   if (num_bins <= 0) num_bins = 1; // Force at least one bin  
   
   // Custom percentile or given by the user?
-  bool custom_percentile = is_custom_percentile(opercentile.value);
-  
   int total_blocks = (Nx-w+1) * (Ny-w+1); // Number of overlapping blocks
 
   // Create equal pixels mask
@@ -476,7 +490,7 @@ void algorithm(int argc, char **argv) {
   float *vmeans = new float[num_channels * num_bins];
   float *vstds  = new float[num_channels * num_bins];
   
-  float *means = new float[num_blocks];  
+  float *means = new float[num_blocks];
   float *blocks = new float[num_blocks*w*w];
   
   // Init FFTW threads
@@ -564,12 +578,12 @@ void algorithm(int argc, char **argv) {
 
       delete[] VL;
       delete[] VH;
-      delete[] indices_VL;        
+      delete[] indices_VL;
     }
-    
+
     delete[] blocks_ptr;
   }
-  
+
   // Filter noise curve
   float *new_std_control = new float[num_bins * num_channels];
   copy(new_std_control, vstds, num_channels*num_bins);
@@ -582,30 +596,20 @@ void algorithm(int argc, char **argv) {
                    &new_std_control[ch*num_bins],
                    D, allow_up);
     }
-  
-  // Print results
-  for (int bin = 0; bin < num_bins; bin++) {
-    // Means
-    for (int ch = 0; ch < num_channels; ch++)
-        printf("%f  ", vmeans[ch*num_bins+bin]);
-        
-    // Standard deviations
-    for (int ch = 0; ch < num_channels; ch++)
-        printf("%f  ", new_std_control[ch*num_bins+bin]);
-    //
-    printf("\n");
-  }
+
+  output_means = vmeans;
+  output_stds  = new_std_control;
 
   // FFTW Cleanup
   fftwf_destroy_plan(fft_plan);
   fftwf_cleanup_threads();
-  fftwf_cleanup();  
+  fftwf_cleanup();
 
   // Clean up memory
   if (mask_all != NULL) delete[] mask_all;
-  delete[] new_std_control;  
-  delete[] vmeans;
+//delete[] new_std_control;
+//delete[] vmeans;
   delete[] vstds;
   delete[] means;
   delete[] blocks;
- }
+}

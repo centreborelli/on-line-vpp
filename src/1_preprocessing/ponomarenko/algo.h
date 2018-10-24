@@ -23,11 +23,30 @@
 #ifndef _ALGO_H_
 #define _ALGO_H_
 
+#include "framework/CImage.h"
+
+struct AlgoOptions {
+  int w;
+  int T;
+  float p;
+  int num_bins;
+  int D;
+  int curve_filter_iterations;
+  int mean_method;
+  bool remove_equal_pixels_blocks;
+  bool custom_percentile;
+};
+
+int parseCommandLine(int argc, char **argv, AlgoOptions &algo_opts,
+                     char * const input_name);
+
 //! Main algorithm entry point
 /*!
   \param argc Number of arguments passed to the program
   \param argv Array of argc arguments passed to the program
 */
-void algorithm(int argc, char **argv);
+//void algorithm(int argc, char **argv);
+void algorithm(AlgoOptions const& opts, CImage& input,
+               float *& means, float *& stds, int &bins);
 
 #endif

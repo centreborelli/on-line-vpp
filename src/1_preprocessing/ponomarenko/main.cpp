@@ -32,7 +32,39 @@
 int main(int argc, char **argv) {
   CFramework *fw = CFramework::get_framework();  
   try {
-    algorithm(argc, argv);
+
+    // Parse command line
+    AlgoOptions opts;
+    char input_file[512];
+    parseCommandLine(argc, argv, opts, input_file);
+
+    // Load input image
+	 {
+		 CImage input;
+		 input.load((char *)input_file);
+
+		 // Call algorithm
+		 int num_channels = input.get_num_channels();
+		 int num_bins;
+		 float *means, *stds;
+		 algorithm(opts, input, means, stds, num_bins);//, means, stds, num_bins);
+
+       // Print results
+       for (int bin = 0; bin < num_bins; bin++) {
+         // Means
+         for (int ch = 0; ch < num_channels; ch++)
+             printf("%f  ", means[ch*num_bins+bin]);
+
+         // Standard deviations
+         for (int ch = 0; ch < num_channels; ch++)
+             printf("%f  ", stds[ch*num_bins+bin]);
+         //
+         printf("\n");
+       }
+
+		 delete[] means;
+		 delete[] stds;
+	 }
     delete fw;
   }
   catch(...) {    

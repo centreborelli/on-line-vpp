@@ -23,9 +23,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <execinfo.h>
-#include "CFramework.h"
-#include "CInspector.h"
-#include "../algo.h"
+#include "framework/CFramework.h"
+#include "framework/CInspector.h"
+#include "algo.h"
 
 #include <time.h>
 

@@ -15,10 +15,11 @@ OBJ=./iio/iio.o\
 	 ./framework/CHistogram.o\
 	 ./framework/CImage.o\
 	 ./framework/CInspector.o\
-	 ./framework/framework.o\
 	 ./framework/operations.o\
 	 ./curve_filter.o\
-	 ./algo.o
+	 ./algo.o\
+	 ./main.o
+
 
 default: $(EXEC)
 all: $(EXEC)
@@ -40,9 +41,6 @@ all: $(EXEC)
 ./framework/CInspector.o: ./framework/CInspector.cpp ./framework/CInspector.h
 	$(CXX) $(CXXFLAGS) -c ./framework/CInspector.cpp -o ./framework/CInspector.o
 
-./framework/framework.o: ./framework/framework.cpp
-	$(CXX) $(CXXFLAGS) -c ./framework/framework.cpp -o ./framework/framework.o
-
 ./framework/operations.o: ./framework/operations.cpp
 	$(CXX) $(CXXFLAGS) -c ./framework/operations.cpp -o ./framework/operations.o
 
@@ -51,6 +49,10 @@ all: $(EXEC)
 
 ./algo.o: ./algo.cpp ./algo.h
 	$(CXX) $(CXXFLAGS) -c ./algo.cpp -o ./algo.o
+
+./main.o: ./main.cpp
+	$(CXX) $(CXXFLAGS) -c ./main.cpp -o ./main.o
+
 
 # ------- Main -------
 $(EXEC): $(OBJ)

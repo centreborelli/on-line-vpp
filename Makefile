@@ -1,7 +1,10 @@
 
-all: vpp tvl1flow kalman fba
+all: vpp tvl1flow kalman fba vpp-mex
 
 vpp:
+	$(MAKE) -C src/$@
+
+vpp-mex:
 	$(MAKE) -C src/$@
 
 tvl1flow:

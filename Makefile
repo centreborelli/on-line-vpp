@@ -1,5 +1,5 @@
 
-all: vpp tvl1flow kalman
+all: vpp tvl1flow kalman fba
 
 vpp:
 	$(MAKE) -C src/$@
@@ -9,3 +9,7 @@ tvl1flow:
 
 kalman:
 	$(MAKE) -C src/4_denoising/kalman
+
+fba:
+	$(MAKE) -C src/5_deblurring/fba-ipol
+

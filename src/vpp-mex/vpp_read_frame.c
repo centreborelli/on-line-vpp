@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "mex.h"
 
 #include <stdio.h>
@@ -31,7 +32,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
         plhs[0] = mxCreateLogicalMatrix(1, 1);
         *mxGetLogicals(plhs[0]) = 0;
     } else {
-        long dims[] = {h, w, d};
+        mwSize dims[] = {h, w, d};
         plhs[0] = mxCreateNumericArray(3, dims, mxSINGLE_CLASS, mxREAL);
         float* pr = (float*) mxGetData(plhs[0]);
         for (int y = 0; y < h; y++) {

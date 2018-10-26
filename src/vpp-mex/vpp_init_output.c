@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "mex.h"
 
 #include <stdio.h>
@@ -29,7 +30,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     mxFree((void*) filename);
 
     if (file) {
-        long dims[] = {4};
+        mwSize dims[] = {4};
         plhs[0] = mxCreateNumericArray(1, dims, mxUINT64_CLASS, mxREAL);
         UINT64_T* pr = (UINT64_T *) mxGetData(plhs[0]);
         pr[1] = w;

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "mex.h"
 
 #include <stdio.h>
@@ -24,8 +25,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
     int d = dat[2];
     FILE* file = (FILE*) dat[3];
 
-    int ndim = mxGetNumberOfDimensions(prhs[1]);
-    const long* dims = mxGetDimensions(prhs[1]);
+    mwSize ndim = mxGetNumberOfDimensions(prhs[1]);
+    const mwSize* dims = mxGetDimensions(prhs[1]);
     if (ndim >= 1 && dims[0] != h) {
         mexErrMsgTxt("invalid h");
     }

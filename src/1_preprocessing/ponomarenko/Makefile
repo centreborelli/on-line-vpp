@@ -8,6 +8,7 @@ CXXFLAGS  = $(CXXOPT) -fopenmp
 CXXSTRICT = -Wall -Wextra -ansi
 LDFLAGS   = -lpng -ljpeg -ltiff -lm -lfftw3f -lfftw3f_threads -lgomp
 EXEC      = ponomarenko
+EXEC_VPP  = ponomarenko-video
 
 OBJ=./iio/iio.o\
 	 ./framework/CFramework.o\
@@ -17,12 +18,11 @@ OBJ=./iio/iio.o\
 	 ./framework/CInspector.o\
 	 ./framework/operations.o\
 	 ./curve_filter.o\
-	 ./algo.o\
-	 ./main.o
+	 ./algo.o
 
 
-default: $(EXEC)
-all: $(EXEC)
+default: $(EXEC_VPP)
+all: $(EXEC) $(EXEC_VPP)
 
 # ------- C files -------
 # ------- C++ files -------
@@ -51,12 +51,18 @@ all: $(EXEC)
 	$(CXX) $(CXXFLAGS) -c ./algo.cpp -o ./algo.o
 
 ./main.o: ./main.cpp
-	$(CXX) $(CXXFLAGS) -c ./main.cpp -o ./main.o
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+./main-vpp.o: ./main-vpp.cpp
+	$(CXX) -I../../vpp $(CXXFLAGS) -c $< -o $@
 
 
 # ------- Main -------
-$(EXEC): $(OBJ)
-	$(CXX) $(OBJ) $(LDFLAGS) -o $(EXEC)
+$(EXEC): main.o $(OBJ)
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+$(EXEC_VPP): main-vpp.o ../../vpp/vpp.o $(OBJ)
+	$(CXX) $^ $(LDFLAGS) -o $@
 
 lint:
 	$(MAKE) CFLAGS="$(CFLAGS) $(CSTRICT)" CXXFLAGS="$(CXXFLAGS) $(CXXSTRICT)"

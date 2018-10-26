@@ -1,0 +1,43 @@
+#set terminal postscript  
+#set terminal png enhanced size 600,600 
+#set terminal pdf
+set terminal png enhanced 
+set output file   
+
+unset key 
+set multiplot
+set size  0.5,0.5
+set origin 0,0.04
+set ylabel "x"
+set xlabel "frames"
+plot file0 using 0:1 with lines title "Original motion",\
+     file1 using 0:1 with lines lw 3 title "Smoothed motion"
+
+set origin 0.0,0.5
+set ylabel "y"
+unset xlabel
+plot file0 using 0:2 with lines title "Original motion",\
+     file1 using 0:2 with lines lw 3 title "Smoothed motion"
+
+set xlabel "x"
+set ylabel "y"
+unset title
+set size  0.5,0.96
+set origin 0.5,0.04
+plot file0 using 1:2 with lines title "Original motion",\
+     file1 using 1:2 with lines lw 3 title "Smoothed motion"
+
+set key center bottom outside horizontal
+set size 1.0,1.0
+set origin 0,0
+set yrange [0:1]
+unset xlabel
+unset ylabel
+unset xtics
+unset ytics
+unset border
+plot (0,-100) with lines title "Original motion",\
+     (0,-100) with lines lw 3 title "Smoothed motion"
+
+unset multiplot
+

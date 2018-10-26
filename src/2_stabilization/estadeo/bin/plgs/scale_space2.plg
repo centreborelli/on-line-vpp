@@ -1,0 +1,39 @@
+set terminal png
+set output file
+
+unset xtics
+unset ytics
+unset bars
+unset border
+unset ylabel
+unset xlabel 
+unset key 
+
+set multiplot
+set size  1,0.25
+
+set origin 0,0.25
+cmd=sprintf("wc -l %s|cut -d ' ' -f 1", file0)
+N = floor(system(cmd))
+plot file0 using 0:1 with lines lw 2 lc rgb 'black' title "x",\
+     file0 using 0:2 with lines lw 2 lc rgb 'blue' title "y"
+
+set origin 0,0.5
+plot file1 using 0:1 with lines lw 2 lc rgb 'black' title "x",\
+     file1 using 0:2 with lines lw 2 lc rgb 'blue' title "y"
+
+set origin 0,0.75
+plot file2 using 0:1 with lines lw 2 lc rgb 'black' title "x",\
+     file2 using 0:2 with lines lw 2 lc rgb 'blue' title "y"
+
+set yrange [0:1]
+set xrange [0:N]
+set key 
+set xtics
+set key center bottom horizontal outside
+set xlabel "Frames"
+set origin 0,0
+plot (0,0) lw 2 lc rgb 'black' title "x", (0,0) lw 2 lc rgb 'blue' title "y", (0,0) lc rgb "black"  linetype 1 lw 2  notitle
+
+unset multiplot
+

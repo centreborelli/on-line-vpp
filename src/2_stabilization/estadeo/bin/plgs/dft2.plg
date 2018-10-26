@@ -1,0 +1,35 @@
+set terminal png enhanced
+set output file
+
+unset xtics
+unset ytics
+unset bars
+unset border
+
+unset key 
+set multiplot
+set size  1,0.25
+unset ylabel 
+unset xlabel 
+
+
+cmd=sprintf("wc -l %s|cut -d ' ' -f 1", file10)
+N = floor(system(cmd))/2
+fps=30
+Hertz=N/fps
+
+set origin 0,0.5
+plot file10 every ::0::N with lines lw 2 lc rgb 'black' title "x",\
+     file11 every ::0::N with lines lw 2 lc rgb 'blue' title "y"
+
+set yrange [0:1]
+set xrange [0:Hertz]
+set key 
+set xtics
+set key center bottom horizontal outside
+set xlabel "Hertz"
+set origin 0,0
+plot (0,0) lc rgb 'black' lw 2 title "x", (0,0) lc rgb 'blue' lw 2 title "y", (0,0) lc rgb "black" linetype 1  lw 2  notitle #, # with lines ls 1
+
+unset multiplot
+

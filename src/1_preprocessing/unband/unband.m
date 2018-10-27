@@ -9,7 +9,7 @@ outputName = arg_list{2};
 pkg load statistics
 pkg load image
 
-% add to path the iio_read and iio_write.
+% add vpp to the path
 addpath([fileparts(mfilename('fullpath')) '/../../vpp-mex']);
 
 

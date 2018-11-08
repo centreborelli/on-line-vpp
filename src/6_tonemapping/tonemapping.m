@@ -5,7 +5,7 @@
 
 % Get list of arguments passed to script
 arg_list = argv();
-if nargin < 2 || nargin > 3
+if nargin < 2 || nargin > 3
     error(['Incorrect number of arguments.\n' ...
         'Usage: tonemapping.m input output [ratioTarget]\n']);
 end
@@ -38,8 +38,9 @@ outputHandle = vpp_init_output(outputName, [H,W,D]);
 if ~outputHandle, error('cannot load output'); end
 
 %%% Get colormap (create variable "cmap")
-% warning ('off', 'Octave:data-file-in-path')
-load colormap.mat
+warning ('off', 'Octave:data-file-in-path');
+load([fileparts(mfilename('fullpath')) /colormap.mat']);
+if ~exist('cmap','var'), error('Couldn''t load the colormap.'); end
 
 %%% MGF parameters
 epsSqrt = 20;   % initialize epsilon. Its value is set automatically afterwards

@@ -61,6 +61,7 @@ while ~isscalar(u)
 
     %%% Estimation of epsilon: initializations
     uStd  = mad(u(:),0); % std(u(:));
+    if uStd==0, uStd = eps; end % avoid ratio = NaN
     ratio = inf;
     nIter = 1;
 

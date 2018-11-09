@@ -1,3 +1,6 @@
+# mex
+*.mex
+
 # vim
 *.swp
 *.swo

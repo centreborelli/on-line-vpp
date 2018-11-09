@@ -38,7 +38,7 @@ struct AlgoOptions {
 };
 
 int parseCommandLine(int argc, char **argv, AlgoOptions &algo_opts,
-                     char * const input_name);
+                     char * const input_name, char * const output_name);
 
 //! Main algorithm entry point
 /*!

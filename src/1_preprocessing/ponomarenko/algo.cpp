@@ -386,7 +386,7 @@ unsigned buildMask(CImage &i_im, int *o_mask,
 }
 
 int parseCommandLine(int argc, char **argv, AlgoOptions &algo_opts,
-                     char * const input_name) {
+                     char * const input_name, char * const output_name) {
 
   vector <OptStruct *> options;
   vector <ParStruct *> parameters;
@@ -406,8 +406,11 @@ int parseCommandLine(int argc, char **argv, AlgoOptions &algo_opts,
   options.push_back(&ofiltercurve);
   options.push_back(&omeanMethod);
 
-  ParStruct pinput = {"input", NULL, "input file"};
+  ParStruct pinput = {"input", "-", "input file"};
   parameters.push_back(&pinput);
+
+  ParStruct poutput = {"output", "-", "output file"};
+  parameters.push_back(&poutput);
 
   if (!parsecmdline("ponomarenko", "Ponomarenko SD noise estimation algorithm",
           argc, argv, options, parameters)) {
@@ -427,7 +430,8 @@ int parseCommandLine(int argc, char **argv, AlgoOptions &algo_opts,
   algo_opts.mean_method = atoi(omeanMethod.value);
   algo_opts.remove_equal_pixels_blocks = ore.flag;
 
-  strcpy(input_name, (char*)pinput.value);
+  strcpy(input_name , (char*)pinput.value);
+  strcpy(output_name, (char*)poutput.value);
 
   return 0;
 }
@@ -461,9 +465,9 @@ void algorithm(AlgoOptions const& opts, CImage& input,
   int Ny = input.get_height();
   int num_channels = input.get_num_channels();
   
-  // Set number of bins
-  if (num_bins <= 0) num_bins = Nx * Ny / 42000;
-  if (num_bins <= 0) num_bins = 1; // Force at least one bin  
+//// Set number of bins
+//if (num_bins <= 0) num_bins = Nx * Ny / 42000;
+//if (num_bins <= 0) num_bins = 1; // Force at least one bin  
   
   // Custom percentile or given by the user?
   int total_blocks = (Nx-w+1) * (Ny-w+1); // Number of overlapping blocks

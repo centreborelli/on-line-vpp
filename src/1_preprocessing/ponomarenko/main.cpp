@@ -30,48 +30,53 @@
 #include <time.h>
 
 int main(int argc, char **argv) {
-  CFramework *fw = CFramework::get_framework();  
-  try {
+	CFramework *fw = CFramework::get_framework();  
+	try {
 
-    // Parse command line
-    AlgoOptions opts;
-    char input_file[512];
-    parseCommandLine(argc, argv, opts, input_file);
+		// Parse command line
+		AlgoOptions opts;
+		char input_file[512];
+		char output_file[512];
+		parseCommandLine(argc, argv, opts, input_fle, output_file);
 
-    // Load input image
-	 {
-		 CImage input;
-		 input.load((char *)input_file);
+		// Set number of bins
+		if (opts.num_bins <= 0) opts.num_bins = Nx * Ny / 42000;
+		if (opts.num_bins <= 0) opts.num_bins = 1; // Force at least one bin
 
-		 // Call algorithm
-		 int num_channels = input.get_num_channels();
-		 int num_bins;
-		 float *means, *stds;
-		 algorithm(opts, input, means, stds, num_bins);//, means, stds, num_bins);
+		// Load input image
+		{
+			CImage input;
+			input.load((char *)input_file);
 
-       // Print results
-       for (int bin = 0; bin < num_bins; bin++) {
-         // Means
-         for (int ch = 0; ch < num_channels; ch++)
-             printf("%f  ", means[ch*num_bins+bin]);
+			// Call algorithm
+			int num_channels = input.get_num_channels();
+			int num_bins;
+			float *means, *stds;
+			algorithm(opts, input, means, stds, num_bins);//, means, stds, num_bins);
 
-         // Standard deviations
-         for (int ch = 0; ch < num_channels; ch++)
-             printf("%f  ", stds[ch*num_bins+bin]);
-         //
-         printf("\n");
-       }
+			// Print results
+			for (int bin = 0; bin < num_bins; bin++) {
+				// Means
+				for (int ch = 0; ch < num_channels; ch++)
+					printf("%f  ", means[ch*num_bins+bin]);
 
-		 delete[] means;
-		 delete[] stds;
-	 }
-    delete fw;
-  }
-  catch(...) {    
-    printf("A exception raised while running the algorithm.\n");
-    printf("Backtrace:\n");
-    fw->print_backtrace(stdout);
-    // [ToDo]: call user handler for the exception
-    exit(-1);
-  }
+				// Standard deviations
+				for (int ch = 0; ch < num_channels; ch++)
+					printf("%f  ", stds[ch*num_bins+bin]);
+				//
+				printf("\n");
+			}
+
+			delete[] means;
+			delete[] stds;
+		}
+		delete fw;
+	}
+	catch(...) {    
+		printf("A exception raised while running the algorithm.\n");
+		printf("Backtrace:\n");
+		fw->print_backtrace(stdout);
+		// [ToDo]: call user handler for the exception
+		exit(-1);
+	}
 }

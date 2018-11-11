@@ -19,6 +19,7 @@ end
 
 %%% Add vpp mex files to path
 addpath([fileparts(mfilename('fullpath')) '/../vpp-mex']);
+addpath(fileparts(mfilename('fullpath')));
 
 %%% Load required Octave packages
 pkg load statistics
@@ -39,7 +40,7 @@ if ~outputHandle, error('cannot load output'); end
 
 %%% Get colormap (create variable "cmap")
 warning ('off', 'Octave:data-file-in-path');
-load([fileparts(mfilename('fullpath')) /colormap.mat']);
+load([fileparts(mfilename('fullpath')) '/colormap.mat']);
 if ~exist('cmap','var'), error('Couldn''t load the colormap.'); end
 
 %%% MGF parameters

@@ -61,8 +61,12 @@ u = vpp_read_frame(inputHandle);
 n = 1;
 while ~isscalar(u)
 
+    %%% compute only statistics on valid pixels
+    % u=0 happens due to the stabilization
+    mask = u~=0;
+
     %%% Estimation of epsilon: initializations
-    uStd  = mad(u(:),0); % std(u(:));
+    uStd  = mad(u(mask),0); % std(u(:));
     if uStd==0, uStd = eps; end % avoid ratio = NaN
     ratio = inf;
     nIter = 1;
@@ -75,7 +79,7 @@ while ~isscalar(u)
         d = u - b;
 
         %%% Compute ratio std(detail)/std(image)
-        dStd  = mad(d(:),0); % std(d(:));
+        dStd  = mad(d(mask),0); % std(d(:));
         ratio = dStd / uStd;
 
         fprintf(2,...

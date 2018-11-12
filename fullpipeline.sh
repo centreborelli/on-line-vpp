@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
-noisy=noisy
-oflow=oflow
-pono=pono
-sigmas=sigmas
+# create a temporary directory for the named pipes
+tmp=$(mktemp -d)
+trap "rm -rf $tmp" EXIT
 
-rm $noisy $oflow $pono $sigmas
+noisy=$tmp/noisy
+oflow=$tmp/oflow
+pono=$tmp/pono
+sigmas=$tmp/sigmas
+
 mkfifo $noisy
 mkfifo $oflow
 mkfifo $pono
@@ -16,7 +19,7 @@ DW=0.1 # weight of data attachment term 0.1 ~ very smooth 0.2 ~ noisy
 FS=1   # finest scale (0 image scale, 1 one coarser level, 2 more coarse, etc...
 oflow_params="0 0.25 $DW 0.3 100 $FS 0.5 5 0.01 0" 
 
-bin/readvid "$1" - \
+bin/readvid "$1"'/*' - \
 	`# preprocessing` \
 	| ./src/1_preprocessing/remove_fpn.m - - \
 	| ./src/1_preprocessing/unband/unband.m - - \
@@ -35,6 +38,4 @@ bin/readvid "$1" - \
 	| bin/writevid - $2 \
 	`# estimate noise` \
 	| bin/ponomarenko -b 1 $pono $sigmas
-
-rm $noisy $oflow $pono $sigmas
 

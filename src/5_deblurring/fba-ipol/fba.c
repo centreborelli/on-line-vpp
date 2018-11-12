@@ -96,7 +96,7 @@ void compute_patch_from_temporal_window(image_double_t patch, struct fba_process
 
 void fba(image_float_t out, image_float_t* inputs, int W, float p, int n)
 {
-    assert(inputs[0].d == 3);
+    assert(inputs[0].d == out.d);
 
     const int w = out.w;
     const int h = out.h;
@@ -144,7 +144,7 @@ void fba(image_float_t out, image_float_t* inputs, int W, float p, int n)
 
     // allocate temporary images
     struct fba_process_buffers process_buffers;
-    process_buffers.ft_patch = new_image_complex(W, W, 3);
+    process_buffers.ft_patch = new_image_complex(W, W, d);
     process_buffers.ft_accum = new_image_complex(W, W, d);
     process_buffers.average_magnitude = new_image_double(W, W, 1);
     process_buffers.weights_accum = new_image_double(W, W, 1);

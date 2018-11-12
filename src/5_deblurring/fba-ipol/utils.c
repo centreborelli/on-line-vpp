@@ -149,33 +149,31 @@ void extract(image_double_t patch, image_double_t img, int x, int y)
 
 void fft(fftw_plan plan, image_complex_t ft, image_double_t img, image_complex_t buffer)
 {
-    assert(ft.d == 3);
-    assert(img.d == 3);
+    assert(ft.d == img.d);
 
-    for (int d = 0; d < 3; d++)
+    for (int d = 0; d < img.d; d++)
     {
         for (int j = 0; j < img.w * img.h; j++)
-            PIXEL(buffer, j) = PIXEL(img, j*3+d); // real to complex
+            PIXEL(buffer, j) = PIXEL(img, j*img.d+d); // real to complex
         fftw_execute_dft(plan, buffer.data, buffer.data);
         for (int j = 0; j < img.w * img.h; j++)
-            PIXEL(ft, j*3+d) = PIXEL(buffer, j);
+            PIXEL(ft, j*img.d+d) = PIXEL(buffer, j);
     }
 }
 
 void ifft(fftw_plan plan, image_double_t img, image_complex_t ft, image_complex_t buffer)
 {
-    assert(ft.d == 3);
-    assert(img.d == 3);
+    assert(ft.d == img.d);
 
     float norm = ft.w * ft.h;
-    for (int d = 0; d < 3; d++)
+    for (int d = 0; d < img.d; d++)
     {
         // normalize matlab style
         for (int j = 0; j < img.w * img.h; j++)
-            PIXEL(buffer, j) = PIXEL(ft, j*3+d) / norm;
+            PIXEL(buffer, j) = PIXEL(ft, j*img.d+d) / norm;
         fftw_execute_dft(plan, buffer.data, buffer.data);
         for (int j = 0; j < img.w * img.h; j++)
-            PIXEL(img, j*3+d) = creal(PIXEL(buffer, j));
+            PIXEL(img, j*img.d+d) = creal(PIXEL(buffer, j));
     }
 }
 
@@ -242,11 +240,15 @@ void cropf(image_float_t out, image_float_t in)
 
 void rgb2greyf(image_float_t grey, image_float_t rgb)
 {
-    assert(rgb.d == 3);
     assert(grey.d == 1);
 
-    for (int i = 0; i < grey.w * grey.h; i++)
-        PIXEL(grey, i) = (PIXEL(rgb, i*3) + PIXEL(rgb, i*3+1) + PIXEL(rgb, i*3+2)) / 3.f;
+    for (int i = 0; i < grey.w * grey.h; i++) {
+        float val = 0.f;
+        for (int d = 0; d < rgb.d; d++)
+            val += PIXEL(rgb, i*rgb.d+d);
+        PIXEL(grey, i) = val;
+    }
+
 }
 
 void linear_combination(image_float_t out, image_float_t in1, image_float_t in2, image_float_t mask)

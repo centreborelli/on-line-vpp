@@ -35,5 +35,5 @@ obj/main.o: main.cpp
 
 clean: 
 	rm -f bin/estadeo bin/generate_graphics
-	rm -R obj
+	rm -f -R obj
 

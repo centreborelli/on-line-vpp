@@ -52,7 +52,6 @@ void consistent_registration(image_float_t* outputs, image_float_t* inputs, int 
     const int w = inputs[0].w;
     const int h = inputs[0].h;
     const int d = inputs[0].d;
-    assert(d == 3);
 
     // compute the padded size and downscaled size
     const int ww = w + (downsampling - w % downsampling);

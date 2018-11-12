@@ -12,5 +12,5 @@ default: $(BINS)
 	mkoctfile ${CFLAGS} --mex $^ vpp/vpp.c -Ivpp
 
 clean:
-	-rm $(BINS)
-	-rm *.o
+	rm -f $(BINS)
+	rm -f *.o

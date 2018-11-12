@@ -42,6 +42,7 @@ if ~outputHandle, error('cannot load output'); end
 warning ('off', 'Octave:data-file-in-path');
 load([fileparts(mfilename('fullpath')) '/colormap.mat']);
 if ~exist('cmap','var'), error('Couldn''t load the colormap.'); end
+cmap = single(cmap);
 
 %%% MGF parameters
 epsSqrt = 20;   % initialize epsilon. Its value is set automatically afterwards
@@ -57,12 +58,18 @@ ratioThreshold = .05;
 step = NaN;
 
 %%% Get first frame; then loop until there is no frame available
-u = vpp_read_frame(inputHandle);
+u = vpp_read_frame(inputHandle); % single
 n = 1;
 while ~isscalar(u)
 
+    %%% Place input in a range where squared values does not explode
+    %%% MGF does not need the input to be in a specific range, yet large values
+    %%% cause numerical errors in single precision.
+    %%% Use u = (u-mean(u(:)))/std(u(:)) if needed, or use double.
+    u = u - mean(u(:));
+
     %%% compute only statistics on valid pixels
-    % u=0 happens due to the stabilization
+    %%% u=0 happens due to the stabilization
     mask = u~=0;
 
     %%% Estimation of epsilon: initializations
@@ -123,7 +130,7 @@ while ~isscalar(u)
 
     %%% Compute color coefficients using the (normalized+clipped) input image
     u = max(0,min(1, .5 + (u-bMed)./(12*bMad) ));
-    u = ind2rgb(uint16( u*(2^16-1) ), cmap);
+    u = single(ind2rgb(uint16( u*(2^16-1) ), cmap));
     c = u ./ (sum(u,3)/3);
 
     %%% Apply color coefficient to vGray to get final colored tonemapped image

@@ -182,7 +182,7 @@
 #  define I_CAN_HAS_FMEMOPEN 1
 #endif
 
-#if _POSIX_C_SOURCE >= 200112L || __OpenBSD__ || __APPLE__
+#if _POSIX_C_SOURCE >= 200112L || __OpenBSD__ || __DragonFly__ || __FreeBSD__ || __APPLE__
 #  define I_CAN_HAS_MKSTEMP 1
 #endif
 
@@ -412,7 +412,7 @@ static void fill_temporary_filename(char *out)
 		static char buf[L_tmpnam+1];
 		char *tfn = tmpnam(buf);
 #endif//I_CAN_HAS_MKSTEMP
-		strncpy(out, tfn, FILENAME_MAX);
+		snprintf(out, FILENAME_MAX, "%s", tfn);
 }
 
 
@@ -1220,11 +1220,11 @@ recover_broken_pixels_float(float *clear, float *broken, int n, int pd)
 }
 
 
-static void break_pixels_uint8(uint8_t *broken, uint8_t *clear, int n, int pd)
-{
-	FORI(n) FORL(pd)
-		broken[n*l + i] = clear[pd*i + l];
-}
+//static void break_pixels_uint8(uint8_t *broken, uint8_t *clear, int n, int pd)
+//{
+//	FORI(n) FORL(pd)
+//		broken[n*l + i] = clear[pd*i + l];
+//}
 
 static void break_pixels_double(double *broken, double *clear, int n, int pd)
 {
@@ -1246,11 +1246,11 @@ recover_broken_pixels_int(int *clear, int *broken, int n, int pd)
 		clear[pd*i + l] = broken[n*l + i];
 }
 
-static void break_pixels_int(int *broken, int *clear, int n, int pd)
-{
-	FORI(n) FORL(pd)
-		broken[n*l + i] = clear[pd*i + l];
-}
+//static void break_pixels_int(int *broken, int *clear, int n, int pd)
+//{
+//	FORI(n) FORL(pd)
+//		broken[n*l + i] = clear[pd*i + l];
+//}
 
 
 static
@@ -1446,8 +1446,8 @@ static TIFF *tiffopen_fancy(const char *filename, char *mode)
 
 	if (aftercomma != ndigits) goto def;
 
-	char buf[FILENAME_MAX];
-	strncpy(buf, filename, FILENAME_MAX);
+	char buf[strlen(filename)];
+	snprintf(buf, strlen(filename), "%s", filename);
 	comma = strrchr(buf, ',');
 	*comma = '\0';
 	int index = atoi(comma + 1);
@@ -2571,6 +2571,7 @@ static int read_beheaded_vrt(struct iio_image *x,
 			int wt, ht;
 			snprintf(fullfname,FILENAME_MAX,"%s/%s",dirvrt2,fname);
 			float *xt = iio_read_image_float(fullfname, &wt, &ht);
+			if (!xt) fail("cannot get VRT subimage %s\n", fullfname);
 			for (int j = 0; j < pos[3]; j++)
 			for (int i = 0; i < pos[2]; i++)
 			{
@@ -2777,6 +2778,8 @@ static int read_raw_named_image(struct iio_image *x, const char *filespec)
 	int sample_type = IIO_TYPE_UINT8;
 	int offset = -1;
 	int orientation = 0;
+	int image_index = 0;
+	int frame_offset = 0;
 
 	// parse description string
 	char *delim = ",", *tok = strtok(description, delim);
@@ -2797,6 +2800,8 @@ static int read_raw_named_image(struct iio_image *x, const char *filespec)
 		case 'o': offset          = field;       break;
 		case 'b': brokenness      = field;       break;
 		case 'e': endianness      = field;       break;
+		case 'i': image_index     = field;       break;
+		case 'y': frame_offset    = field;       break;
 		case 't': sample_type     = iio_inttyp(1+tok); break;
 		case 'r': orientation     = tok[1]+256*tok[2]; break;
 		}
@@ -2809,6 +2814,8 @@ static int read_raw_named_image(struct iio_image *x, const char *filespec)
 	IIO_DEBUG("p = %d\n", pixel_dimension);
 	IIO_DEBUG("o = %d\n", offset);
 	IIO_DEBUG("b = %d\n", brokenness);
+	IIO_DEBUG("i = %d\n", image_index);
+	IIO_DEBUG("y = %d\n", frame_offset);
 	IIO_DEBUG("t = %s\n", iio_strtyp(sample_type));
 
 	// estimate missing dimensions
@@ -2827,6 +2834,8 @@ static int read_raw_named_image(struct iio_image *x, const char *filespec)
 	if (offset < 0 || width < 0 || height < 0)
 		fail("could not determine width, height and offset"
 				"(got %d,%d,%d)", width, height, offset);
+	offset += frame_offset;
+	offset += image_index * (frame_offset + width*height*pd*ss);
 	IIO_DEBUG("after estimation w=%d h=%d o=%d\n", width, height, offset);
 
 	int used_data_size = offset+width*height*pd*ss;
@@ -3457,7 +3466,7 @@ static bool comma_named_tiff(const char *filename)
 	if (lnumber != ldigits) return false;
 
 	char rfilename[FILENAME_MAX];
-	strncpy(rfilename, filename, FILENAME_MAX);
+	snprintf(rfilename, FILENAME_MAX, "%s", filename);
 	comma = rfilename + (comma - filename);
 	*comma = '\0';
 

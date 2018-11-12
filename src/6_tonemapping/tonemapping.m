@@ -96,33 +96,50 @@ while ~isscalar(u)
         %%% Update values
         epsSqrtPrev = epsSqrt;
         epsSqrt     = epsSqrt * ratioTarget / ratio;
-        if n~=1 && nIter == 1
+        if nIter == 1 % handle brutal changes
             epsSqrt = .25*epsSqrt + .75*epsSqrtPrev; % temporal smoothing
         end
         step        = epsSqrt - epsSqrtPrev;
         nIter       = nIter + 1;
 
-        %%% If estimation does not converge (should not happen)
-        if nIter > 25, break; end
+        %%% Saturate epsSqrt
+        %%% For mostly flat images (no detail), ratioTarget can't be reached
+        if epsSqrt > 200
+            epsSqrt = 200;
+            if epsSqrtPrev == 200, break; end
+        end
+
+        %%% If estimation does not converge
+        %%% This should not happen because of the condition above
+        if nIter > 15, break; end
     end
 
-    %%% Compress the base layer
+    %%% Compress the base layer (in [-.5,+.5])
     bMed = median(b(:));
     bMad = median(abs(u(:) - bMed)); % same as mad(b(:),1);
-    b    = max(-.5,min(+.5, (b-bMed)./(12*bMad) )) / 6;
+    b    = max(-.5,min(+.5, (b-bMed)./(36*bMad) ));
 
-    %%% Compress the detail layer
-    dMad = mad(d(:),1);
-    d    = d ./ (12*dMad);
+    %%% Compress the detail layer (in [-.5,+.5])
+    % dMad = mad(d(:),1);
+    % d    = d ./ (12*dMad);
+    if n == 1
+        dMin = min(d(:));
+        dMax = max(d(:));
+    else
+        dMin = .25*min(d(:)) + .75*dMin;
+        dMax = .25*max(d(:)) + .75*dMax;
+    end
+    d = (d-dMin)./(dMax-dMin) - .5;
 
     %%% Gray tone-mapped image
-    v = .5 + b + d;
+    %%% We prefer clipping in black than in white, hence the .4 instead of .5
+    v = .4 + b/2 + d;
 
     %%% Count black and white clipping
     vClipBlack = sum( v(:) < 0 ) / numel(v);
     vClipWhite = sum( v(:) > 1 ) / numel(v);
     fprintf(2,...
-        ['Img #%04d\tClipping: %.2f%% in black and %.2f%% in white.\n'],...
+        'Img #%04d\tClipping: %.2f%% in black and %.2f%% in white.\n',...
         n, vClipBlack*100, vClipWhite*100);
 
     %%% Clip

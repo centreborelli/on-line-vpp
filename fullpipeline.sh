@@ -40,7 +40,7 @@ if [ "$OUTPUT_INTERMEDIATE" -eq 1 ]; then
 	outunband=$dsttmp/unband.vpp
 	outstab=$dsttmp/stab.vpp
 	outdenoise=$dsttmp/denoise.vpp
-	outdeblur=$dsttmp/outdeblur.vpp
+	outdeblur=$dsttmp/deblur.vpp
 	outtonemap=$dsttmp/tonemap.vpp
 else
 	outinput=/dev/null
@@ -60,17 +60,17 @@ oflow_params="0 0.25 $DW 0.3 100 $FS 0.5 5 0.01 0"
 # define all the functions needed for the process
 function remove_fpn() {
 	./src/1_preprocessing/remove_fpn.m $1 - \
-	| ./bin/vp dup - $2 $outfpn
+	| tee $outfpn
 }
 
 function unband() {
 	./src/1_preprocessing/unband/unband.m $1 - \
-	| ./bin/vp dup - $2 $outunband
+	| tee $outunband
 }
 
 function stabilize() {
 	bin/estadeo $1 -o - \
-	| ./bin/vp dup - $2 $outstab
+	| tee $outstab
 }
 
 function denoise() {
@@ -79,38 +79,38 @@ function denoise() {
 	| bin/vp dup - $oflow - \
 	| bin/vlambda - "x(0,0)[0] x(-1,0)[0] - x(0,0)[1] x(0,-1)[1] - + 0.5 > 255 *" -o - \
 	| bin/kalman -i $noisy -o $oflow -k - -s $sigmas -d - -v \
-	| ./bin/vp dup - $2 $outdenoise
+	| tee $outdenoise
 }
 
 function deblur() {
 	bin/fba 5 128 11 3 $1 - \
-	| ./bin/vp dup - $2 $outdeblur
+	| tee $outdeblur
 }
 
 function tonemap() {
 	./src/6_tonemapping/tonemapping.m $1 - \
-	| ./bin/vp dup - $2 $outtonemap
+	| tee $outtonemap
 }
 
 # remove some of the features if needed
 if [ "$REMOVE_FPN" -eq 0 ]; then
 	function remove_fpn() {
-		./bin/vp dup $1 $2 $outfpn
+		tee $outfpn
 	}
 fi
 if [ "$STABILIZE" -eq 0 ]; then
 	function stabilize() {
-		./bin/vp dup $1 $2 $outstab
+		tee $outstab
 	}
 fi
 if [ "$DENOISE" -eq 0 ]; then
 	function denoise() {
-		./bin/vp dup $1 $2 $outdenoise
+		tee $outdenoise
 	}
 fi
 if [ "$DEBLUR" -eq 0 ]; then
 	function deblur() {
-		./bin/vp dup $1 $2 $outdeblur
+		tee $outdeblur
 	}
 fi
 

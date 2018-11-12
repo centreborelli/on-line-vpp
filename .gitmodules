@@ -1,6 +1,3 @@
-[submodule "src/vpp"]
-	path = src/vpp
-	url = https://github.com/kidanger/vpp.git
 [submodule "src/4_denoising/kalman/repo"]
 	path = src/4_denoising/kalman/repo
 	url = https://github.com/pariasm/bwd-nlkalman.git

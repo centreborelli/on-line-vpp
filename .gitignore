@@ -1,3 +1,11 @@
+src/1_preprocessing/ponomarenko/ponomarenko-video
+src/2_stabilization/estadeo/bin/estadeo
+src/3_oflow/tvl1flow_3/tvl1flow
+src/4_denoising/kalman/kalman
+src/5_deblurring/fba-ipol/fba
+src/vpp/.deps.mk
+src/vpp/bin/
+
 # mex
 *.mex
 

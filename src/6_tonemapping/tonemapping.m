@@ -59,6 +59,24 @@ step = NaN;
 %%% Get first frame; then loop until there is no frame available
 u = double(vpp_read_frame(inputHandle));
 n = 1;
+
+%%% Initialiations
+switch method
+    case 'ratioStd'
+        %%% Estimation of epsilon: parameters and initializations
+        ratioThreshold = .05;
+        step = NaN;
+
+    case 'localStd'
+        %%% Method 2: initialiation
+        mask = u~=0;
+        w = 4;
+        k = ones(w*2+1) / (w*2+1)^2;
+        localVar = imfilter(u.^2,k,'symmetric') - imfilter(u,k,'symmetric').^2;
+        localStd = sqrt(max(0, localVar(mask) ));
+        epsSqrt  = quantile(localStd,.75)*increaseEps;
+end
+
 while ~isscalar(u)
 
     %%% compute only statistics on valid pixels
@@ -75,46 +93,65 @@ while ~isscalar(u)
     %%% Replace stab borders by m to reduce creation of halos
     u(~mask) = m;
 
-    %%% Estimation of epsilon: initializations
-    uStd  = 1.4826*mad(u(mask),1); % = std(u(:));
-    if uStd==0, uStd = eps; end % avoid ratio = NaN
-    ratio = inf;
-    nIter = 1;
-
     %%% Compute parameter epsilon, and base + detail decomposition
-    while abs(ratio - ratioTarget) > ratioThreshold
+    switch method
+        case 'ratioStd'
 
-        %%% Compute decomposition
-        b = MGFoctave(u, u, epsSqrt^2, radius, nIt, nScales, gamma);
-        d = u - b;
+            %%% Estimation of epsilon: initializations
+            uStd  = 1.4826*mad(u(mask),1); % = std(u(:));
+            if uStd==0, uStd = eps; end % avoid ratio = NaN
+            ratio = inf;
+            nIter = 1;
 
-        %%% Compute ratio std(detail)/std(image)
-        dStd  = 1.4826*mad(d(mask),1); % = std(d(:));
-        ratio = dStd / uStd;
+            %%% Compute parameter epsilon, and base + detail decomposition
+            while abs(ratio - ratioTarget) > ratioThreshold
 
-        % fprintf(2,...
-        %     'Img #%04d\tIter #%d:\tEpsilon = %f\tRatio = %f\tStep = %f\n',...
-        %     n, nIter, epsSqrt, ratio, step);
+                %%% Compute decomposition
+                b = MGFoctave(u, u, epsSqrt^2, radius, nIt, nScales, gamma);
+                d = u - b;
 
-        %%% Update values
-        epsSqrtPrev = epsSqrt;
-        epsSqrt     = epsSqrt * ratioTarget / ratio;
-        if nIter == 1 % handle brutal changes
-            epsSqrt = .25*epsSqrt + .75*epsSqrtPrev; % temporal smoothing
-        end
-        step        = epsSqrt - epsSqrtPrev;
-        nIter       = nIter + 1;
+                %%% Compute ratio std(detail)/std(image)
+                dStd  = 1.4826*mad(d(mask),1); % = std(d(:));
+                ratio = dStd / uStd;
 
-        %%% Saturate epsSqrt
-        %%% For mostly flat images (no detail), ratioTarget can't be reached
-        if epsSqrt > 150
-            epsSqrt = 150;
-            if epsSqrtPrev == 150, break; end
-        end
+                % fprintf(2,...
+                %     'Img #%04d\tIter #%d:\tEpsilon = %f\tRatio = %f\tStep = %f\n',...
+                %     n, nIter, epsSqrt, ratio, step);
 
-        %%% If estimation does not converge
-        %%% This should not happen because of the condition above
-        if nIter > 15, break; end
+                %%% Update values
+                epsSqrtPrev = epsSqrt;
+                epsSqrt     = epsSqrt * ratioTarget / ratio;
+                if nIter == 1 % handle brutal changes
+                    epsSqrt = .25*epsSqrt + .75*epsSqrtPrev; % temporal smoothing
+                end
+                step        = epsSqrt - epsSqrtPrev;
+                nIter       = nIter + 1;
+
+                %%% Saturate epsSqrt
+                %%% For mostly flat images (no detail), ratioTarget can't be reached
+                if epsSqrt > 150
+                    epsSqrt = 150;
+                    if epsSqrtPrev == 150, break; end
+                end
+
+                %%% If estimation does not converge
+                %%% This should not happen because of the condition above
+                if nIter > 15, break; end
+            end
+
+        case 'localStd'
+
+            %%% Local std (for valid pixels only)
+            nIter = 1;
+            localVar = imfilter(u.^2,k,'symmetric') - imfilter(u,k,'symmetric').^2;
+            localStd = sqrt(max(0, localVar(mask) ));
+            epsSqrt  = quantile(localStd,.75)*increaseEps;
+            b = MGFoctave(u, u, epsSqrt^2, radius, nIt, nScales, gamma);
+            d = u - b;
+
+        otherwise
+
+            error('Incorrect method.');
     end
 
     %%% Compress the base layer

@@ -92,9 +92,9 @@ while ~isscalar(u)
         dStd  = 1.4826*mad(d(mask),1); % = std(d(:));
         ratio = dStd / uStd;
 
-        fprintf(2,...
-            'Img #%04d\tIter #%d:\tEpsilon = %f\tRatio = %f\tStep = %f\n',...
-            n, nIter, epsSqrt, ratio, step);
+        % fprintf(2,...
+        %     'Img #%04d\tIter #%d:\tEpsilon = %f\tRatio = %f\tStep = %f\n',...
+        %     n, nIter, epsSqrt, ratio, step);
 
         %%% Update values
         epsSqrtPrev = epsSqrt;
@@ -134,14 +134,15 @@ while ~isscalar(u)
     vClipBlack = sum( v(:) < 0 ) / numel(v);
     vClipWhite = sum( v(:) > 1 ) / numel(v);
     fprintf(2,...
-        'Img #%04d\tEps = %.1f\tClipped %.2f%% in black, %.2f%% in white.\n',...
-        n, epsSqrt, vClipBlack*100, vClipWhite*100);
+        ['Img #%04d\tEps = %.1f (%d iter)' ...
+         '\tClipped %.2f%% in black, %.2f%% in white.\n'],...
+        n, epsSqrt, nIter-1, vClipBlack*100, vClipWhite*100);
 
     %%% Clip
     v = max(0,min(1, v ));
 
     %%% Compute color coefficients using the (normalized+clipped) input image
-    u = max(0,min(1, .5 + (u-bMed)./(36*1.4826*bMad) ));
+    u = max(0,min(1, .5 + (u-bMed)./(9*1.4826*bMad) ));
     u = ind2rgb(uint16( u*(2^16-1) ), cmap);
     c = u ./ (sum(u,3)/3);
 

@@ -23,6 +23,8 @@ if nScales==0
     % nScales = max(1, floor(log2(min(size(I,1),size(I,2)))) -2);
     %%% version below is easier to justify
     nScales = max(1, floor(log2(min(size(I,1),size(I,2)))) );
+elseif nScales < 0
+    nScales = max(1, floor(log2(min(size(I,1),size(I,2)))) -nScales);
 end
 if nargin == 6
     gamma = 1/3;

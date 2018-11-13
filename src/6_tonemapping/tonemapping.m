@@ -72,7 +72,7 @@ while ~isscalar(u)
     mask = u~=0;
 
     %%% Estimation of epsilon: initializations
-    uStd  = mad(u(mask),0); % std(u(:));
+    uStd  = 1.4826*mad(u(mask),1); % = std(u(:));
     if uStd==0, uStd = eps; end % avoid ratio = NaN
     ratio = inf;
     nIter = 1;
@@ -85,7 +85,7 @@ while ~isscalar(u)
         d = u - b;
 
         %%% Compute ratio std(detail)/std(image)
-        dStd  = mad(d(mask),0); % std(d(:));
+        dStd  = 1.4826*mad(d(mask),1); % = std(d(:));
         ratio = dStd / uStd;
 
         fprintf(2,...

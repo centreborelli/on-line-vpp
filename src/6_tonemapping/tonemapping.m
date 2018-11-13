@@ -61,15 +61,19 @@ u = double(vpp_read_frame(inputHandle));
 n = 1;
 while ~isscalar(u)
 
+    %%% compute only statistics on valid pixels
+    %%% u=0 happens due to the stabilization
+    mask = u~=0;
+
     %%% Place input in a range where squared values does not explode
     %%% MGF does not need the input to be in a specific range, yet large values
     %%% cause numerical errors in single precision.
     %%% Use u = (u-mean(u(:)))/std(u(:)) if needed, or use double.
-    u = u - mean(u(:));
+    m = mean(u(mask));
+    u = u - m;
 
-    %%% compute only statistics on valid pixels
-    %%% u=0 happens due to the stabilization
-    mask = u~=0;
+    %%% Replace stab borders by m to reduce creation of halos
+    u(~mask) = m;
 
     %%% Estimation of epsilon: initializations
     uStd  = 1.4826*mad(u(mask),1); % = std(u(:));

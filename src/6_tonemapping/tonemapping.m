@@ -27,7 +27,7 @@ pkg load image
 
 %%% Input
 inputHandle = vpp_init_input(inputName);
-if ~inputHandle, error('cannot load input'); end
+if ~inputHandle, error('cannot load input %s',inputName); end
 
 %%% Define size of output
 H = inputHandle(1); % height of input
@@ -36,7 +36,7 @@ D = 3;              % depth: output has color
 
 %%% Output
 outputHandle = vpp_init_output(outputName, [H,W,D]);
-if ~outputHandle, error('cannot load output'); end
+if ~outputHandle, error('cannot load output %s',outputName); end
 
 %%% Get colormap (create variable "cmap")
 warning ('off', 'Octave:data-file-in-path');

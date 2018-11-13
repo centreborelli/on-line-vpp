@@ -83,7 +83,7 @@ function denoise() {
 }
 
 function deblur() {
-	bin/fba 5 128 11 3 $1 - \
+	bin/fba 3 128 4 3 $1 - \
 	| tee $outdeblur
 }
 
@@ -116,7 +116,7 @@ fi
 
 # run everything!
 bin/readvid "$src"'/*' - \
-	| ./bin/vp dup - - $outinput \
+	| tee $outinput \
 	| remove_fpn - - \
 	| unband - - \
 	| ./bin/vp dup - - $pono \

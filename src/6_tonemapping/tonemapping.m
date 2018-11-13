@@ -114,12 +114,12 @@ while ~isscalar(u)
     end
 
     %%% Compress the base layer (in [-.5,+.5])
-    bMed = median(b(:));
-    bMad = median(abs(u(:) - bMed)); % same as mad(b(:),1);
+    bMed = median(b(mask));
+    bMad = median(abs(u(mask) - bMed)); % same as mad(b(mask),1);
     b    = max(-.5,min(+.5, (b-bMed)./(36*bMad) ));
 
     %%% Compress the detail layer (in [-.5,+.5])
-    % dMad = mad(d(:),1);
+    % dMad = mad(d(mask),1);
     % d    = d ./ (12*dMad);
     if n == 1
         dMin = min(d(:));

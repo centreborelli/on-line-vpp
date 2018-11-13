@@ -107,9 +107,9 @@ while ~isscalar(u)
 
         %%% Saturate epsSqrt
         %%% For mostly flat images (no detail), ratioTarget can't be reached
-        if epsSqrt > 200
-            epsSqrt = 200;
-            if epsSqrtPrev == 200, break; end
+        if epsSqrt > 150
+            epsSqrt = 150;
+            if epsSqrtPrev == 150, break; end
         end
 
         %%% If estimation does not converge
@@ -117,39 +117,31 @@ while ~isscalar(u)
         if nIter > 15, break; end
     end
 
-    %%% Compress the base layer (in [-.5,+.5])
+    %%% Compress the base layer
     bMed = median(b(mask));
     bMad = median(abs(u(mask) - bMed)); % same as mad(b(mask),1);
-    b    = max(-.5,min(+.5, (b-bMed)./(36*bMad) ));
+    b    = max(-.5,min(+.5, (b-bMed) ./ (36 * 1.4826*bMad) )) / 2;
 
-    %%% Compress the detail layer (in [-.5,+.5])
-    % dMad = mad(d(mask),1);
-    % d    = d ./ (12*dMad);
-    if n == 1
-        dMin = min(d(:));
-        dMax = max(d(:));
-    else
-        dMin = .25*min(d(:)) + .75*dMin;
-        dMax = .25*max(d(:)) + .75*dMax;
-    end
-    d = (d-dMin)./(dMax-dMin) - .5;
+    %%% Compress the detail layer
+    dMad = mad(d(mask),1);
+    d    = d ./ (9 * 1.4826*dMad);
 
     %%% Gray tone-mapped image
     %%% We prefer clipping in black than in white, hence the .4 instead of .5
-    v = .4 + b/2 + d;
+    v = .4 + b + d;
 
     %%% Count black and white clipping
     vClipBlack = sum( v(:) < 0 ) / numel(v);
     vClipWhite = sum( v(:) > 1 ) / numel(v);
     fprintf(2,...
-        'Img #%04d\tClipping: %.2f%% in black and %.2f%% in white.\n',...
-        n, vClipBlack*100, vClipWhite*100);
+        'Img #%04d\tEps = %.1f\tClipped %.2f%% in black, %.2f%% in white.\n',...
+        n, epsSqrt, vClipBlack*100, vClipWhite*100);
 
     %%% Clip
     v = max(0,min(1, v ));
 
     %%% Compute color coefficients using the (normalized+clipped) input image
-    u = max(0,min(1, .5 + (u-bMed)./(12*bMad) ));
+    u = max(0,min(1, .5 + (u-bMed)./(36*1.4826*bMad) ));
     u = ind2rgb(uint16( u*(2^16-1) ), cmap);
     c = u ./ (sum(u,3)/3);
 

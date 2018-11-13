@@ -31,7 +31,7 @@ if ~output
 end
 
 v = vpp_read_frame(input);
-while v
+while ~isscalar(v)
 	% helper matrices
 	mv = ones(size(v,1)-20+1,1);
 	mh = ones(1,size(v,2));

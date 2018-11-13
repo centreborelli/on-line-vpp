@@ -31,7 +31,7 @@ end
 frames = zeros(input(1), input(2), input(3), 0);
 
 v = vpp_read_frame(input);
-while v
+while ~isscalar(v)
 	frames(:,:,:,end+1) = v;
 	v = vpp_read_frame(input);
 end

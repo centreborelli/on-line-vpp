@@ -90,13 +90,12 @@ while ~isscalar(u)
     m = mean(u(mask));
     u = u - m;
 
-    %%% Replace stab borders by m to reduce creation of halos
-    u(~mask) = m;
+    %%% Replace stab borders by 0 to reduce creation of halos (u centered in 0)
+    u(~mask) = 0;
 
     %%% Compute parameter epsilon, and base + detail decomposition
     switch method
         case 'ratioStd'
-
             %%% Estimation of epsilon: initializations
             uStd  = 1.4826*mad(u(mask),1); % = std(u(:));
             if uStd==0, uStd = eps; end % avoid ratio = NaN
@@ -177,6 +176,7 @@ while ~isscalar(u)
 
     %%% Clip
     v = max(0,min(1, v ));
+    v(~mask) = 0; % stabilization borders
 
     %%% Compute color coefficients using the (normalized+clipped) input image
     u = max(0,min(1, .5 + (u-bMed)./(9*1.4826*bMad) ));

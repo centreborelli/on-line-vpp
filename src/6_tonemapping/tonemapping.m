@@ -5,16 +5,40 @@
 
 % Get list of arguments passed to script
 arg_list = argv();
-if nargin < 2 || nargin > 3
+if nargin < 2 || nargin > 4
     error(['Incorrect number of arguments.\n' ...
-        'Usage: tonemapping.m input output [ratioTarget]\n']);
+        'Usage: tonemapping.m input output [method [method-param]]\n']);
 end
 inputName = arg_list{1}; % can be '-' for stdin
 outputName = arg_list{2}; % can be '-' for stdout
-if nargin == 3
-    ratioTarget = arg_list{3};
+if nargin < 3
+    method = 'localStd';
+    increaseEps = 2;
 else
-    ratioTarget = 1/4;
+    method = arg_list{3};
+    if nargin < 4
+        switch method
+            case 'ratioStd'
+                ratioTarget = 1/4;
+            case 'localStd'
+                increaseEps = 2;
+        end
+    else
+        switch method
+            case 'ratioStd'
+                ratioTarget = str2double(arg_list{4});
+            case 'localStd'
+                increaseEps = str2double(arg_list{4});
+        end
+    end
+end
+switch method
+    case 'ratioStd'
+        fprintf(2,'Tonemapping: using method "%s" and ratioTarget = %f.\n',...
+            method,ratioTarget)
+    case 'localStd'
+        fprintf(2,'Tonemapping: using method "%s" and increaseEps = %f.\n',...
+            method,increaseEps)
 end
 
 %%% Add vpp mex files to path
@@ -52,10 +76,6 @@ gamma   = 1;    % evolution of gamma over the scales: eps <-- eps / scale^gamma
                 %   - with gamma>0, reduce eps for low scales
                 %   - with gamma=0, keep eps constant
 
-%%% Estimation of epsilon: parameters and initializations
-ratioThreshold = .05;
-step = NaN;
-
 %%% Get first frame; then loop until there is no frame available
 u = double(vpp_read_frame(inputHandle));
 n = 1;
@@ -63,12 +83,10 @@ n = 1;
 %%% Initialiations
 switch method
     case 'ratioStd'
-        %%% Estimation of epsilon: parameters and initializations
         ratioThreshold = .05;
         step = NaN;
 
     case 'localStd'
-        %%% Method 2: initialiation
         mask = u~=0;
         w = 4;
         k = ones(w*2+1) / (w*2+1)^2;
@@ -139,9 +157,8 @@ while ~isscalar(u)
             end
 
         case 'localStd'
-
             %%% Local std (for valid pixels only)
-            nIter = 1;
+            nIter = 2;
             localVar = imfilter(u.^2,k,'symmetric') - imfilter(u,k,'symmetric').^2;
             localStd = sqrt(max(0, localVar(mask) ));
             epsSqrt  = quantile(localStd,.75)*increaseEps;
@@ -149,7 +166,6 @@ while ~isscalar(u)
             d = u - b;
 
         otherwise
-
             error('Incorrect method.');
     end
 

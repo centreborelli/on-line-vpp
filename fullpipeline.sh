@@ -88,7 +88,7 @@ function deblur() {
 }
 
 function tonemap() {
-	./src/6_tonemapping/tonemapping.m $1 - \
+	./src/6_tonemapping/tonemapping.m $1 - localStd 4 \
 	| tee $outtonemap
 }
 

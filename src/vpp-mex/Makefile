@@ -1,5 +1,3 @@
-CFLAGS += -DVPP_OUTPUT_DOT
-
 BINS=vpp_init_input.mex\
 	  vpp_init_output.mex\
 	  vpp_read_frame.mex\
@@ -9,8 +7,8 @@ BINS=vpp_init_input.mex\
 default: $(BINS)
 
 %.mex: %.c
-	mkoctfile ${CFLAGS} --mex $^ vpp/vpp.c -Ivpp
+	mkoctfile ${CFLAGS} --mex $^ ../vpp/vpp.o -I../vpp
 
 clean:
 	rm -f $(BINS)
-	rm -f *.o
+

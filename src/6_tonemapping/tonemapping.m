@@ -87,7 +87,7 @@ switch method
         step = NaN;
 
     case 'localStd'
-        mask = u~=0;
+        mask = u > 128; mask = imopen(mask,true(3));
         w = 4;
         k = ones(w*2+1) / (w*2+1)^2;
         localVar = imfilter(u.^2,k,'symmetric') - imfilter(u,k,'symmetric').^2;
@@ -99,7 +99,7 @@ while ~isscalar(u)
 
     %%% compute only statistics on valid pixels
     %%% u=0 happens due to the stabilization
-    mask = u~=0;
+    mask = u > 128; mask = imopen(mask,true(3));
 
     %%% Place input in a range where squared values does not explode
     %%% MGF does not need the input to be in a specific range, yet large values

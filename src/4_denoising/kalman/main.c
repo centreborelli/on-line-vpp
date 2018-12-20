@@ -27,7 +27,6 @@ int main(int argc, const char *argv[])
 	const char *flow_path = NULL;
 	const char *occl_path = NULL;
 	const char *deno_path = NULL; // output stream
-	int fframe = 0, lframe = -1;
 	const char* sigma_path = NULL;
 	float sigma = 0.f;
 	bool verbose = false;
@@ -44,13 +43,11 @@ int main(int argc, const char *argv[])
 	struct argparse_option options[] = {
 		OPT_HELP(),
 		OPT_GROUP("Algorithm options"),
-		OPT_STRING ('i', "nisy"  , &nisy_path, "noisy input path (printf format)"),
-		OPT_STRING ('o', "flow"  , &flow_path, "backward flow path (printf format)"),
-		OPT_STRING ('k', "occl"  , &occl_path, "flow occlusions mask (printf format)"),
-		OPT_STRING ('d', "deno"  , &deno_path, "denoised output path (printf format)"),
-		OPT_INTEGER('f', "first" , &fframe, "first frame"),
-		OPT_INTEGER('l', "last"  , &lframe , "last frame"),
-		OPT_STRING ('s', "sigma" , &sigma_path, "noise standard dev"),
+		OPT_STRING ('i', "nisy"  , &nisy_path, "noisy input pipe"),
+		OPT_STRING ('o', "flow"  , &flow_path, "backward flow pipe"),
+		OPT_STRING ('k', "occl"  , &occl_path, "flow occlusions mask pipe"),
+		OPT_STRING ('d', "deno"  , &deno_path, "denoised output path pipe"),
+		OPT_STRING ('s', "sigma" , &sigma_path, "noise standard dev pipe"),
 		OPT_INTEGER('p', "patch" , &prms.patch_sz, "patch size"),
 		OPT_INTEGER('w', "search", &prms.search_sz, "search region radius"),
 		OPT_FLOAT  ( 0 , "dth"   , &prms.dista_th, "patch distance threshold"),
@@ -66,7 +63,7 @@ int main(int argc, const char *argv[])
 	// parse command line
 	struct argparse argparse;
 	argparse_init(&argparse, options, usages, 0);
-	argparse_describe(&argparse, "\nA video denoiser based on non-local means.", "");
+	argparse_describe(&argparse, "\nA video denoiser based on Kalman filtering of patch trajectories.", "");
 	argc = argparse_parse(&argparse, argc, argv);
 
 	// process first frame [[[2

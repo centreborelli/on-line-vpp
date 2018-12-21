@@ -115,6 +115,10 @@ if [ "$REMOVE_FPN" -eq 0 ]; then
 fi
 if [ "$STABILIZE" -eq 0 ]; then
 	function stabilize() {
+		beforemask=$(getfifo beforemask)
+		bin/vp dup - - $beforemask \
+		| bin/vlambda - -o $mask 'x 0 >' \
+		| cat $beforemask \
 		tee $outstab
 	}
 fi

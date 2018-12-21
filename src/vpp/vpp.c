@@ -4,6 +4,10 @@
 
 #include "vpp.h"
 
+#ifdef VPP_OUTPUT_TIME
+#include <time.h>
+#endif
+
 #define VPP_TAG "VPP"
 
 #ifdef VPP_OUTPUT_DOT
@@ -120,6 +124,17 @@ err:
 
 FILE* vpp_init_output(const char* filename, int w, int h, int d)
 {
+#ifdef VPP_OUTPUT_TIME
+    char path[2048];
+    snprintf(path, sizeof(path), "/tmp/vpp_timeof%d", getpid());
+    FILE* f = fopen(path, "w");
+    if (f) {
+        clock_t tic = clock();
+        fwrite(&tic, sizeof(tic), 1, f);
+        fclose(f);
+    }
+#endif
+
     char tag[4] = {VPP_TAG};
     FILE* out = !strcmp(filename, "-") ? stdout : fopen(filename, "wb");
     setvbuf(out, NULL, _IONBF, 0);
@@ -151,11 +166,46 @@ err:
 
 int vpp_read_frame(FILE* in, float* frame, int w, int h, int d)
 {
-    return fread(frame, sizeof*frame, w*h*d, in) == (size_t) w*h*d;
+    int ret = fread(frame, sizeof*frame, w*h*d, in) == (size_t) w*h*d;
+#ifdef VPP_OUTPUT_TIME
+    if (getenv("VPP_OUTPUT_TIME")) {
+        char path[2048];
+        snprintf(path, sizeof(path), "/tmp/vpp_timeof%d", getpid());
+        FILE* f = fopen(path, "w");
+        if (f) {
+            clock_t tic = clock();
+            fwrite(&tic, sizeof(tic), 1, f);
+            fclose(f);
+        }
+    }
+#endif
+    return ret;
 }
 
 int vpp_write_frame(FILE* out, float* frame, int w, int h, int d)
 {
+#ifdef VPP_OUTPUT_TIME
+    if (getenv("VPP_OUTPUT_TIME")) {
+        clock_t tic;
+        clock_t toc = clock();
+        char path[2048];
+        snprintf(path, sizeof(path), "/tmp/vpp_timeof%d", getpid());
+        FILE* f = fopen(path, "r");
+        if (f) {
+            fread(&tic, sizeof(tic), 1, f);
+            fclose(f);
+        }
+        if (tic) {
+            fprintf(stderr, "%s\ttime\t%f\n", myname(), (float)(toc-tic)/CLOCKS_PER_SEC);
+            FILE* f = fopen(path, "w");
+            tic = 0;
+            if (f) {
+                fwrite(&tic, sizeof(tic), 1, f);
+                fclose(f);
+            }
+        }
+    }
+#endif
     return fwrite(frame, sizeof*frame, w*h*d, out) == (size_t) w*h*d;
 }
 

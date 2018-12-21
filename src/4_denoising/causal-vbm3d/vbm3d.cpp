@@ -93,79 +93,75 @@ bool ComparaisonFirst(pair<float,unsigned> pair1, pair<float,unsigned> pair2)
  * @return none
  **/
 void run_vbm3d(
-    const float sigma
-,   std::vector<float*> &buffer_input
-,   std::vector<float*> &buffer_basic
-,   float* final_estimate
-,   const int w
-,   const int h
-,   const int d
-,   const Parameters& prms_1
-,   const Parameters& prms_2
-,   const int index
-,   const int size_buffer
-,   vector<float>& kaiser_window_1
-,   vector<float>& coef_norm_1
-,   vector<float>& coef_norm_inv_1
-,   vector<float>& kaiser_window_2
-,   vector<float>& coef_norm_2
-,   vector<float>& coef_norm_inv_2
-,   vector<float>& lpd
-,   vector<float>& hpd
-,   vector<float>& lpr
-,   vector<float>& hpr
+	const float sigma
+,	std::vector<float*> &buffer_input
+,	std::vector<float*> &buffer_basic
+,	float* final_estimate
+,	const int w
+,	const int h
+,	const int d
+,	const Parameters& prms_1
+,	const Parameters& prms_2
+,	const int index
+,	const int size_buffer
+,	vector<float>& kaiser_window_1
+,	vector<float>& coef_norm_1
+,	vector<float>& coef_norm_inv_1
+,	vector<float>& kaiser_window_2
+,	vector<float>& coef_norm_2
+,	vector<float>& coef_norm_inv_2
+,	vector<float>& lpd
+,	vector<float>& hpd
+,	vector<float>& lpr
+,	vector<float>& hpr
 ){
-    float* denominator;
-    denominator = (float*) malloc(w*h*d*sizeof*denominator);
+	float* denominator;
+	denominator = (float*) malloc(w*h*d*sizeof*denominator);
 
 	//! Allocate plan for FFTW library
 	fftwf_plan plan_2d[1];
 	fftwf_plan plan_2d_inv[1];
 
-    //! Allocating Plan for FFTW process
-    if (prms_1.T_2D == DCT)
-    {
-        const unsigned nb_cols = ind_size(0, w - prms_1.k, prms_1.st);
-        allocate_plan_2d(&plan_2d[0], prms_1.k, FFTW_REDFT10,
-                prms_1.Nmax * d);
-        allocate_plan_2d(&plan_2d_inv[0], prms_1.k, FFTW_REDFT01,
-                prms_1.Nmax * nb_cols * d);
-    }
+	//! Allocating Plan for FFTW process
+	if (prms_1.T_2D == DCT)
+	{
+		const unsigned nb_cols = ind_size(0, w - prms_1.k, prms_1.st);
+		allocate_plan_2d(&plan_2d[0], prms_1.k, FFTW_REDFT10, prms_1.Nmax * d);
+		allocate_plan_2d(&plan_2d_inv[0], prms_1.k, FFTW_REDFT01, prms_1.Nmax * nb_cols * d);
+	}
 
-    //! Denoising, 1st Step
-    vbm3d_1st_step(sigma, buffer_input, buffer_basic[index], denominator, w, h, d, prms_1,
-            &plan_2d[0], &plan_2d_inv[0], index, size_buffer, kaiser_window_1, coef_norm_1,
-            coef_norm_inv_1, lpd, hpd, lpr, hpr);
+	//! Denoising, 1st Step
+	vbm3d_1st_step(sigma, buffer_input, buffer_basic[index], denominator, w, h, d, prms_1,
+			&plan_2d[0], &plan_2d_inv[0], index, size_buffer, kaiser_window_1, coef_norm_1,
+			coef_norm_inv_1, lpd, hpd, lpr, hpr);
 
-    //! Aggregation basic 1st Step
-    for (unsigned k = 0; k < w*h*d; k++)
-        buffer_basic[index][k] /= denominator[k];
+	//! Aggregation basic 1st Step
+	for (unsigned k = 0; k < w*h*d; k++)
+		buffer_basic[index][k] /= denominator[k];
 
-    if(prms_2.k > 0)
-    {
-        //! Allocating Plan for FFTW process
-        if (prms_2.T_2D == DCT)
-        {
-            const unsigned nb_cols = ind_size(0, (w - prms_2.k), prms_2.st);
-            allocate_plan_2d(&plan_2d[0], prms_2.k, FFTW_REDFT10,
-                    prms_2.Nmax * d);
-            allocate_plan_2d(&plan_2d_inv[0], prms_2.k, FFTW_REDFT01,
-                    prms_2.Nmax * nb_cols * d);
-        }
-        //! Denoising, 2nd Step
-        vbm3d_2nd_step(sigma, buffer_input, buffer_basic, final_estimate, denominator, w, h, d, prms_2,
-                &plan_2d[0], &plan_2d_inv[0], index, size_buffer, kaiser_window_2, coef_norm_2,
-                coef_norm_inv_2, lpd, hpd, lpr, hpr);
+	if(prms_2.k > 0)
+	{
+		//! Allocating Plan for FFTW process
+		if (prms_2.T_2D == DCT)
+		{
+			const unsigned nb_cols = ind_size(0, (w - prms_2.k), prms_2.st);
+			allocate_plan_2d(&plan_2d[0], prms_2.k, FFTW_REDFT10, prms_2.Nmax * d);
+			allocate_plan_2d(&plan_2d_inv[0], prms_2.k, FFTW_REDFT01, prms_2.Nmax * nb_cols * d);
+		}
+		//! Denoising, 2nd Step
+		vbm3d_2nd_step(sigma, buffer_input, buffer_basic, final_estimate, denominator,
+				w, h, d, prms_2, &plan_2d[0], &plan_2d_inv[0], index, size_buffer,
+				kaiser_window_2, coef_norm_2, coef_norm_inv_2, lpd, hpd, lpr, hpr);
 
-        //! Aggregation 2nd Step
-        for (unsigned k = 0; k < w*h*d; k++)
-            final_estimate[k] /= denominator[k];
-    }
-    else
-    {
-        for (unsigned k = 0; k < w*h*d; k++)
-            final_estimate[k] = buffer_basic[index][k];
-    }
+		//! Aggregation 2nd Step
+		for (unsigned k = 0; k < w*h*d; k++)
+			final_estimate[k] /= denominator[k];
+	}
+	else
+	{
+		for (unsigned k = 0; k < w*h*d; k++)
+			final_estimate[k] = buffer_basic[index][k];
+	}
 }
 
 /**
@@ -192,32 +188,32 @@ void run_vbm3d(
  * @return none.
  **/
 void vbm3d_1st_step(
-    const float sigma
-,   std::vector<float*>& buffer
-,   float* basic_estimate
-,   float* denominator
-,   const int w
-,   const int h
-,   const int d
-,   const Parameters& prms
-,   fftwf_plan *  plan_2d
-,   fftwf_plan *  plan_2d_inv
-,   const int index
-,   const int size_buffer
-,   vector<float>& kaiser_window
-,   vector<float>& coef_norm
-,   vector<float>& coef_norm_inv
-,   vector<float>& lpd
-,   vector<float>& hpd
-,   vector<float>& lpr
-,   vector<float>& hpr
+	const float sigma
+,	std::vector<float*>& buffer
+,	float* basic_estimate
+,	float* denominator
+,	const int w
+,	const int h
+,	const int d
+,	const Parameters& prms
+,	fftwf_plan *  plan_2d
+,	fftwf_plan *  plan_2d_inv
+,	const int index
+,	const int size_buffer
+,	vector<float>& kaiser_window
+,	vector<float>& coef_norm
+,	vector<float>& coef_norm_inv
+,	vector<float>& lpd
+,	vector<float>& hpd
+,	vector<float>& lpr
+,	vector<float>& hpr
 ){
 	//! Initialization for convenience
 	vector<unsigned> row_ind(0);
-    ind_initialize(row_ind, 0, h - prms.k, prms.st);
+	ind_initialize(row_ind, 0, h - prms.k, prms.st);
 
 	vector<unsigned> column_ind(0);
-    ind_initialize(column_ind, 0, w - prms.k, prms.st);
+	ind_initialize(column_ind, 0, w - prms.k, prms.st);
 
 	const unsigned kH2 = prms.k * prms.k;
 	vector<float> group_3D_table(d * kH2 * prms.Nmax * column_ind.size());
@@ -226,8 +222,8 @@ void vbm3d_1st_step(
 	vector<float> hadamard_tmp(prms.Nmax);
 
 	//! For aggregation part
-    memset(denominator, 0, sizeof(*denominator)*w*h*d);
-    memset(basic_estimate, 0, sizeof(*basic_estimate)*w*h*d);
+	memset(denominator, 0, sizeof(*denominator)*w*h*d);
+	memset(basic_estimate, 0, sizeof(*basic_estimate)*w*h*d);
 
 	//! Precompute Bloc-Matching
 	vector<vector<pair<unsigned, unsigned> > > patch_table(column_ind.size(), std::vector<pair<unsigned,unsigned> >(prms.Nmax));
@@ -236,98 +232,96 @@ void vbm3d_1st_step(
 
 	vector<float> table_2D(prms.Nmax * d * kH2, 0.0f);
 
-    //! Loop on i_r
-    for (unsigned ind_i = 0; ind_i < row_ind.size(); ind_i++)
-    {
-        wx_r_table.clear();
-        group_3D_table.clear();
+	//! Loop on i_r
+	for (unsigned ind_i = 0; ind_i < row_ind.size(); ind_i++)
+	{
+		wx_r_table.clear();
+		group_3D_table.clear();
 
-        const unsigned i_r = row_ind[ind_i];
+		const unsigned i_r = row_ind[ind_i];
 
-        //! Loop on j_r
-        for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
-        {
-            //! Initialization
-            const unsigned j_r = column_ind[ind_j];
-            unsigned nSx_r = computeSimilarPatches(distances, patch_table[ind_j], index, d*(j_r + i_r*w), buffer, w, h, d, size_buffer, prms);
-            size_patch_table[ind_j] = nSx_r;
+		//! Loop on j_r
+		for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
+		{
+			//! Initialization
+			const unsigned j_r = column_ind[ind_j];
+			unsigned nSx_r = computeSimilarPatches(distances, patch_table[ind_j], index, d*(j_r + i_r*w), buffer, w, h, d, size_buffer, prms);
+			size_patch_table[ind_j] = nSx_r;
 
-            //! Update of table_2D
-            if (prms.T_2D == DCT)
-                dct_2d_process(table_2D, buffer, w, d, patch_table[ind_j], plan_2d,
-                        prms.k, coef_norm);
-            else if (prms.T_2D == BIOR)
-                bior_2d_process(table_2D, buffer, w, d, patch_table[ind_j], 
-                        prms.k, lpd, hpd);
+			//! Update of table_2D
+			if (prms.T_2D == DCT)
+				dct_2d_process(table_2D, buffer, w, d, patch_table[ind_j], plan_2d,
+						prms.k, coef_norm);
+			else if (prms.T_2D == BIOR)
+				bior_2d_process(table_2D, buffer, w, d, patch_table[ind_j], 
+						prms.k, lpd, hpd);
 
-            //! Build of the 3D group
-            vector<float> group_3D(d * nSx_r * kH2, 0.0f);
-            for(unsigned c = 0; c < d; c++)
-                for (unsigned n = 0; n < nSx_r; n++)
-                    for (unsigned k = 0; k < kH2; k++)
-                        group_3D[n + k * nSx_r + c * kH2 * nSx_r] =
-                            table_2D[k + n * kH2 + c * kH2 * prms.Nmax];
+			//! Build of the 3D group
+			vector<float> group_3D(d * nSx_r * kH2, 0.0f);
+			for (unsigned c = 0; c < d; c++)
+			for (unsigned n = 0; n < nSx_r; n++)
+			for (unsigned k = 0; k < kH2; k++)
+				group_3D[n + k * nSx_r + c * kH2 * nSx_r] = table_2D[k + n * kH2 + c * kH2 * prms.Nmax];
 
-            //! HT filtering of the 3D group
-            vector<float> weight_table(d);
-            if(prms.T_3D == HADAMARD)
-                ht_filtering_hadamard(group_3D, hadamard_tmp, nSx_r, prms.k, d, sigma, prms.lambda, weight_table);
-            else
-                ht_filtering_haar(group_3D, hadamard_tmp, nSx_r, prms.k, d, sigma, prms.lambda, weight_table);
+			//! HT filtering of the 3D group
+			vector<float> weight_table(d);
+			if(prms.T_3D == HADAMARD)
+				ht_filtering_hadamard(group_3D, hadamard_tmp, nSx_r, prms.k, d,
+						sigma, prms.lambda, weight_table);
+			else
+				ht_filtering_haar(group_3D, hadamard_tmp, nSx_r, prms.k, d, sigma,
+						prms.lambda, weight_table);
 
-            //! Save the 3D group. The DCT 2D inverse will be done after.
-            for (unsigned c = 0; c < d; c++)
-                for (unsigned n = 0; n < nSx_r; n++)
-                    for (unsigned k = 0; k < kH2; k++)
-                        group_3D_table.push_back(group_3D[n + k * nSx_r + c * kH2 * nSx_r]);
+			//! Save the 3D group. The DCT 2D inverse will be done after.
+			for (unsigned c = 0; c < d; c++)
+			for (unsigned n = 0; n < nSx_r; n++)
+			for (unsigned k = 0; k < kH2; k++)
+				group_3D_table.push_back(group_3D[n + k * nSx_r + c * kH2 * nSx_r]);
 
-            //! Save weighting
-            for (unsigned c = 0; c < d; c++)
-                wx_r_table.push_back(weight_table[c]);
+			//! Save weighting
+			for (unsigned c = 0; c < d; c++)
+				wx_r_table.push_back(weight_table[c]);
 
-        } //! End of loop on j_r
+		} //! End of loop on j_r
 
-        //!  Apply 2D inverse transform
-        if (prms.T_2D == DCT)
-            dct_2d_inv(group_3D_table, prms.k, prms.Nmax * d * column_ind.size(),
-                    coef_norm_inv, plan_2d_inv);
-        else if (prms.T_2D == BIOR)
-            bior_2d_inv(group_3D_table, prms.k, lpr, hpr);
+		//!  Apply 2D inverse transform
+		if (prms.T_2D == DCT)
+			dct_2d_inv(group_3D_table, prms.k, prms.Nmax * d * column_ind.size(),
+					coef_norm_inv, plan_2d_inv);
+		else if (prms.T_2D == BIOR)
+			bior_2d_inv(group_3D_table, prms.k, lpr, hpr);
 
 
-        //! Registration of the weighted estimation
-        unsigned dec = 0;
-        for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
-        {
-            const unsigned nSx_r = size_patch_table[ind_j];
-            for (unsigned c = 0; c < d; c++)
-            {
-                for (unsigned n = 0; n < nSx_r; n++)
-                {
-                    //! Only aggregates patches from the current frame
-                    if(patch_table[ind_j][n].first == index)
-                    {
-                        for (unsigned p = 0; p < prms.k; p++)
-                            for (unsigned q = 0; q < prms.k; q++)
-                            {
-                                basic_estimate[patch_table[ind_j][n].second + d*(p + q*w)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d]
-                                    * group_3D_table[p * prms.k + q + n * kH2 + c * kH2 * nSx_r + dec];
-                                denominator[patch_table[ind_j][n].second + d*(p + q*w)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d];
-                            }
-                    }
-                }
-            }
+		//! Registration of the weighted estimation
+		unsigned dec = 0;
+		for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
+		{
+			const unsigned nSx_r = size_patch_table[ind_j];
+			for (unsigned c = 0; c < d; c++)
+			for (unsigned n = 0; n < nSx_r; n++)
+				//! Only aggregates patches from the current frame
+				if(patch_table[ind_j][n].first == index)
+				{
+					for (unsigned p = 0; p < prms.k; p++)
+					for (unsigned q = 0; q < prms.k; q++)
+					{
+						basic_estimate[patch_table[ind_j][n].second + d*(p + q*w)]
+							+= kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d]
+							 * group_3D_table[p * prms.k + q + n * kH2 + c * kH2 * nSx_r + dec];
+						denominator[patch_table[ind_j][n].second + d*(p + q*w)]
+							+= kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d];
+					}
+				}
+			dec += nSx_r * d * kH2;
+		}
 
-            dec += nSx_r * d * kH2;
-        }
-
-    } //! End of loop on i_r
+	} //! End of loop on i_r
 }
 
 /**
  * @brief Run the final process of BM3D (2nd step). The result
  *        is contained in final_estimate. 
- *        
+ *
  * @param sigma: value of assumed noise of the video to denoise;
  * @param buffer_input: vector containing the noisy frames;
  * @param buffer_basic: vector containing the basic frames;
@@ -384,8 +378,8 @@ void vbm3d_2nd_step(
 	vector<float> tmp(prms.Nmax);
 
 	//! For aggregation part
-    memset(denominator, 0, sizeof(*denominator)*w*h*d);
-    memset(final_estimate, 0, sizeof(*final_estimate)*w*h*d);
+	memset(denominator, 0, sizeof(*denominator)*w*h*d);
+	memset(final_estimate, 0, sizeof(*final_estimate)*w*h*d);
 
 	//! Precompute Bloc-Matching
 	vector<vector<pair<unsigned,unsigned> > > patch_table(column_ind.size(), std::vector<pair<unsigned,unsigned> >(prms.Nmax));
@@ -396,104 +390,100 @@ void vbm3d_2nd_step(
 	vector<float> table_2D_vid(prms.Nmax * d * kW2, 0.0f);
 	vector<float> table_2D_est(prms.Nmax * d * kW2, 0.0f);
 
-    //! Loop on i_r
-    for (unsigned ind_i = 0; ind_i < row_ind.size(); ind_i++)
-    {
-        wx_r_table.clear();
-        group_3D_table.clear();
+	//! Loop on i_r
+	for (unsigned ind_i = 0; ind_i < row_ind.size(); ind_i++)
+	{
+		wx_r_table.clear();
+		group_3D_table.clear();
 
-        const unsigned i_r = row_ind[ind_i];
+		const unsigned i_r = row_ind[ind_i];
 
-        //! Loop on j_r
-        for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
-        {
-            const unsigned j_r = column_ind[ind_j];
-            //! Number of similar patches
-            unsigned nSx_r = computeSimilarPatches(distances, patch_table[ind_j], index, d*(j_r + i_r*w), buffer_basic, w, h, d, size_buffer, prms);
-            size_patch_table[ind_j] = nSx_r;
+		//! Loop on j_r
+		for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
+		{
+			const unsigned j_r = column_ind[ind_j];
+			//! Number of similar patches
+			unsigned nSx_r = computeSimilarPatches(distances, patch_table[ind_j], index, d*(j_r + i_r*w), buffer_basic, w, h, d, size_buffer, prms);
+			size_patch_table[ind_j] = nSx_r;
 
-            //! Update of DCT_table_2D
-            if (prms.T_2D == DCT)
-            {
-                dct_2d_process(table_2D_vid, buffer_input, w, d, patch_table[ind_j], plan_2d,
-                        prms.k, coef_norm);
-                dct_2d_process(table_2D_est, buffer_basic, w, d, patch_table[ind_j], plan_2d,
-                        prms.k, coef_norm);
-            }
-            else if (prms.T_2D == BIOR)
-            {
-                bior_2d_process(table_2D_vid, buffer_input, w, d, patch_table[ind_j], 
-                        prms.k, lpd, hpd);
-                bior_2d_process(table_2D_est, buffer_basic, w, d, patch_table[ind_j],
-                        prms.k, lpd, hpd);
-            }
+			//! Update of DCT_table_2D
+			if (prms.T_2D == DCT)
+			{
+				dct_2d_process(table_2D_vid, buffer_input, w, d, patch_table[ind_j], plan_2d,
+						prms.k, coef_norm);
+				dct_2d_process(table_2D_est, buffer_basic, w, d, patch_table[ind_j], plan_2d,
+						prms.k, coef_norm);
+			}
+			else if (prms.T_2D == BIOR)
+			{
+				bior_2d_process(table_2D_vid, buffer_input, w, d, patch_table[ind_j], 
+						prms.k, lpd, hpd);
+				bior_2d_process(table_2D_est, buffer_basic, w, d, patch_table[ind_j],
+						prms.k, lpd, hpd);
+			}
 
-            //! Build of the 3D group
-            vector<float> group_3D_est(d * nSx_r * kW2, 0.0f);
-            vector<float> group_3D_vid(d * nSx_r * kW2, 0.0f);
-            for (unsigned c = 0; c < d; c++)
-                for (unsigned n = 0; n < nSx_r; n++)
-                {
-                    for (unsigned k = 0; k < kW2; k++)
-                    {
-                        group_3D_est[n + k * nSx_r + c * kW2 * nSx_r] =
-                            table_2D_est[k + n * kW2 + c * kW2 * prms.Nmax];
-                        group_3D_vid[n + k * nSx_r + c * kW2 * nSx_r] =
-                            table_2D_vid[k + n * kW2 + c * kW2 * prms.Nmax];
-                    }
-                }
+			//! Build of the 3D group
+			vector<float> group_3D_est(d * nSx_r * kW2, 0.0f);
+			vector<float> group_3D_vid(d * nSx_r * kW2, 0.0f);
+			for (unsigned c = 0; c < d; c++)
+			for (unsigned n = 0; n < nSx_r; n++)
+			for (unsigned k = 0; k < kW2; k++)
+			{
+				group_3D_est[n + k * nSx_r + c * kW2 * nSx_r] =
+					table_2D_est[k + n * kW2 + c * kW2 * prms.Nmax];
+				group_3D_vid[n + k * nSx_r + c * kW2 * nSx_r] =
+					table_2D_vid[k + n * kW2 + c * kW2 * prms.Nmax];
+			}
 
-            //! Wiener filtering of the 3D group
-            vector<float> weight_table(d);
-            if(prms.T_3D == HADAMARD)
-                wiener_filtering_hadamard(group_3D_vid, group_3D_est, tmp, nSx_r, prms.k,
-                        d, sigma, weight_table);
-            else
-                wiener_filtering_haar(group_3D_vid, group_3D_est, tmp, nSx_r, prms.k,
-                        d, sigma, weight_table);
+			//! Wiener filtering of the 3D group
+			vector<float> weight_table(d);
+			if(prms.T_3D == HADAMARD)
+				wiener_filtering_hadamard(group_3D_vid, group_3D_est, tmp, nSx_r, prms.k,
+						d, sigma, weight_table);
+			else
+				wiener_filtering_haar(group_3D_vid, group_3D_est, tmp, nSx_r, prms.k,
+						d, sigma, weight_table);
 
-            //! Save the 3D group. The DCT 2D inverse will be done after.
-            for (unsigned c = 0; c < d; c++)
-                for (unsigned n = 0; n < nSx_r; n++)
-                    for (unsigned k = 0; k < kW2; k++)
-                        group_3D_table.push_back(group_3D_est[n + k * nSx_r + c * kW2 * nSx_r]);
+			//! Save the 3D group. The DCT 2D inverse will be done after.
+			for (unsigned c = 0; c < d; c++)
+			for (unsigned n = 0; n < nSx_r; n++)
+			for (unsigned k = 0; k < kW2; k++)
+				group_3D_table.push_back(group_3D_est[n + k * nSx_r + c * kW2 * nSx_r]);
 
-            //! Save weighting
-            for (unsigned c = 0; c < d; c++)
-                wx_r_table.push_back(weight_table[c]);
+			//! Save weighting
+			for (unsigned c = 0; c < d; c++)
+				wx_r_table.push_back(weight_table[c]);
 
-        } //! End of loop on j_r
+		} //! End of loop on j_r
 
-        //!  Apply 2D dct inverse
-        if (prms.T_2D == DCT)
-            dct_2d_inv(group_3D_table, prms.k, prms.Nmax * d * column_ind.size(),
-                    coef_norm_inv, plan_2d_inv);
-        else if (prms.T_2D == BIOR)
-            bior_2d_inv(group_3D_table, prms.k, lpr, hpr);
+		//!  Apply 2D dct inverse
+		if (prms.T_2D == DCT)
+			dct_2d_inv(group_3D_table, prms.k, prms.Nmax * d * column_ind.size(),
+					coef_norm_inv, plan_2d_inv);
+		else if (prms.T_2D == BIOR)
+			bior_2d_inv(group_3D_table, prms.k, lpr, hpr);
 
-        //! Registration of the weighted estimation
-        unsigned dec = 0;
-        for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
-        {
-            const unsigned nSx_r = size_patch_table[ind_j];
-            for (unsigned c = 0; c < d; c++)
-            {
-                for (unsigned n = 0; n < nSx_r; n++)
-                {
-                    if(patch_table[ind_j][n].first == index)
-                    {
-                        for (unsigned p = 0; p < prms.k; p++)
-                            for (unsigned q = 0; q < prms.k; q++)
-                            {
-                                final_estimate[patch_table[ind_j][n].second + d*(p*w + q)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d]
-                                    * group_3D_table[p * prms.k + q + n * kW2 + c * kW2 * nSx_r + dec];
-                                denominator[patch_table[ind_j][n].second + d*(p*w + q)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d];
-                            }
-                    }
-                }
-            }
-            dec += nSx_r * d * kW2;
-        }
+		//! Registration of the weighted estimation
+		unsigned dec = 0;
+		for (unsigned ind_j = 0; ind_j < column_ind.size(); ind_j++)
+		{
+			const unsigned nSx_r = size_patch_table[ind_j];
+			for (unsigned c = 0; c < d; c++)
+			for (unsigned n = 0; n < nSx_r; n++)
+			if(patch_table[ind_j][n].first == index)
+			{
+				for (unsigned p = 0; p < prms.k; p++)
+				for (unsigned q = 0; q < prms.k; q++)
+				{
+					final_estimate[patch_table[ind_j][n].second + d*(p*w + q)]
+						+= kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d]
+						 * group_3D_table[p * prms.k + q + n * kW2 + c * kW2 * nSx_r + dec];
+					denominator[patch_table[ind_j][n].second + d*(p*w + q)]
+						+= kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d];
+				}
+			}
+			dec += nSx_r * d * kW2;
+		}
 	}
 }
 
@@ -511,28 +501,29 @@ void vbm3d_2nd_step(
  **/
 inline float patchDistance(
 	unsigned patch1
-, 	unsigned patch2
-, 	vector<float*>& frames
-,   const int w
-,   const int d
-,   const int size_buffer
-, 	int sizePatch
+,	unsigned patch2
+,	vector<float*>& frames
+,	const int w
+,	const int d
+,	const int size_buffer
+,	int sizePatch
 ){
 	const int sPx = sizePatch;
-    unsigned t1,p1;
-    unsigned t2,p2;
+	unsigned t1,p1;
+	unsigned t2,p2;
 
-    t1 = patch1 % size_buffer;
-    t2 = patch2 % size_buffer;
+	t1 = patch1 % size_buffer;
+	t2 = patch2 % size_buffer;
 
-    p1 = patch1 / size_buffer;
-    p2 = patch2 / size_buffer;
+	p1 = patch1 / size_buffer;
+	p2 = patch2 / size_buffer;
 
 	float dist = 0.f, dif;
 	for (unsigned hc = 0; hc < d; ++hc)
-    for (unsigned hy = 0; hy < sPx; hy++)
-    for (unsigned hx = 0; hx < sPx; hx++)
-        dist += (dif = (frames[t1][p1 + d*(hx + hy*w)] - frames[t2][p2 + d*(hx + hy*w)])) * dif;
+	for (unsigned hy = 0; hy < sPx; hy++)
+	for (unsigned hx = 0; hx < sPx; hx++)
+		dist += (dif = (frames[t1][p1 + d*(hx + hy*w)] - frames[t2][p2 + d*(hx + hy*w)])) * dif;
+
 	return dist / (sPx * sPx * d) / (255.f*255.f);
 }
 
@@ -554,32 +545,32 @@ inline float patchDistance(
  **/
 inline void localSearch(
 	unsigned pidx
-, 	unsigned rpidx
-, 	unsigned s
-, 	int k
-, 	unsigned Nl
+,	unsigned rpidx
+,	unsigned s
+,	int k
+,	unsigned Nl
 ,	float d
-, 	vector<float*>& frames
-,   const int w
-,   const int h
-,   const int c
-,   const int size_buffer
-, 	std::unordered_map<unsigned, int>& alreadySeen
-, 	std::vector<std::pair<float, unsigned> >& bestPatches
+,	vector<float*>& frames
+,	const int w
+,	const int h
+,	const int c
+,	const int size_buffer
+,	std::unordered_map<unsigned, int>& alreadySeen
+,	std::vector<std::pair<float, unsigned> >& bestPatches
 ){
 	int sWx = s;
 	int sWy = s;
 	const int sPx = k;
 
-    unsigned rp;
-    rp = rpidx / size_buffer;
+	unsigned rp;
+	rp = rpidx / size_buffer;
 
-    unsigned ct, cp;
-    ct = pidx % size_buffer;
-    cp = pidx / size_buffer;
-    unsigned px, py;
-    px = cp % w;
-    py = cp / w;
+	unsigned ct, cp;
+	ct = pidx % size_buffer;
+	cp = pidx / size_buffer;
+	unsigned px, py;
+	px = cp % w;
+	py = cp / w;
 
 	unsigned rangex[2];
 	unsigned rangey[2];
@@ -599,15 +590,17 @@ inline void localSearch(
 
 	//! Compute distance between patches in search range
 	for (unsigned qy = rangey[0], dy = 0; qy <= rangey[1]; qy++, dy++)
-		for (unsigned qx = rangex[0], dx = 0; qx <= rangex[1]; qx++, dx++)
-		{
-            unsigned currentPatch = c*(qx + qy*w)*size_buffer + ct;
+	for (unsigned qx = rangex[0], dx = 0; qx <= rangex[1]; qx++, dx++)
+	{
+		unsigned currentPatch = c*(qx + qy*w)*size_buffer + ct;
 
-			//! Save distance and corresponding patch index
-			int seen = (alreadySeen[currentPatch]++);
-			if(seen == 0)
-				distance.push_back((rp == (qx + qy*w)) ? std::make_pair(patchDistance(rpidx, currentPatch, frames, w, c, size_buffer, sPx) - d, currentPatch):std::make_pair(patchDistance(rpidx, currentPatch, frames, w, c, size_buffer, sPx), currentPatch));
-		}
+		//! Save distance and corresponding patch index
+		int seen = (alreadySeen[currentPatch]++);
+		if(seen == 0)
+			distance.push_back((rp == (qx + qy*w))
+				? std::make_pair(patchDistance(rpidx, currentPatch, frames, w, c, size_buffer, sPx) - d, currentPatch)
+				: std::make_pair(patchDistance(rpidx, currentPatch, frames, w, c, size_buffer, sPx), currentPatch));
+	}
 
 	int nbCandidates = std::min(Nl, (unsigned)distance.size());
 	std::partial_sort(distance.begin(), distance.begin() + nbCandidates,
@@ -631,13 +624,13 @@ inline void localSearch(
 int computeSimilarPatches(
 	std::vector<float>& output
 ,	std::vector<pair<unsigned,unsigned> >& index
-,   int idx_curr_frame
+,	int idx_curr_frame
 ,	unsigned pidx
-, 	vector<float*>& frames
-,   const int w
-,   const int h
-,   const int c
-,   const int size_buffer
+,	vector<float*>& frames
+,	const int w
+,	const int h
+,	const int c
+,	const int size_buffer
 ,	const Parameters& prms
 ){
 	std::vector<unsigned> tempMatchesPre(prms.Nl);
@@ -647,24 +640,25 @@ int computeSimilarPatches(
 	frameBestPatches.reserve(prms.Nl*prms.Nl);
 	std::unordered_map<unsigned, int> alreadySeen;
 
-    int ridx = pidx * size_buffer + idx_curr_frame;
+	int ridx = pidx * size_buffer + idx_curr_frame;
 
 	//! Search in the current frame
-	localSearch(ridx, ridx, prms.Rr, prms.k, prms.Nl, prms.d, frames, w, h, c, size_buffer, alreadySeen, bestPatches);
+	localSearch(ridx, ridx, prms.Rr, prms.k, prms.Nl, prms.d, frames, w, h, c,
+			size_buffer, alreadySeen, bestPatches);
 	for(unsigned ix = 0; ix < prms.Nl; ++ix)
 		tempMatchesPre[ix] = bestPatches[ix].second;
 
 	//! Search in the previous frames (centered on the matches)
 	int finalFrame = (idx_curr_frame - min(size_buffer, (int) prms.Rf) + 1 + size_buffer) % size_buffer;
-    int nextFrame = (idx_curr_frame + size_buffer - 1) % size_buffer;
-    bool over = (finalFrame == idx_curr_frame) ? true : false;
-    while(!over)
+	int nextFrame = (idx_curr_frame + size_buffer - 1) % size_buffer;
+	bool over = (finalFrame == idx_curr_frame) ? true : false;
+	while(!over)
 	{
 		frameBestPatches.clear();
 		for(unsigned currentTempMatch = 0; currentTempMatch < prms.Nl; ++currentTempMatch)
 		{
-            unsigned currentMatch = (tempMatchesPre[currentTempMatch] / size_buffer) * size_buffer + nextFrame;
-            localSearch(currentMatch, ridx, prms.Rp, prms.k, prms.Nl, prms.d, frames, w, h, c, size_buffer, alreadySeen, frameBestPatches);
+			unsigned currentMatch = (tempMatchesPre[currentTempMatch] / size_buffer) * size_buffer + nextFrame;
+			localSearch(currentMatch, ridx, prms.Rp, prms.k, prms.Nl, prms.d, frames, w, h, c, size_buffer, alreadySeen, frameBestPatches);
 		}
 
 		int nbCandidates = std::min(prms.Nl, (unsigned)frameBestPatches.size());
@@ -675,10 +669,10 @@ int computeSimilarPatches(
 			tempMatchesPre[ix] = frameBestPatches[ix].second;
 			bestPatches.push_back(frameBestPatches[ix]);
 		}
-        if(nextFrame == finalFrame)
-            over = true;
-        else
-            nextFrame = (nextFrame + size_buffer - 1) % size_buffer;
+		if(nextFrame == finalFrame)
+			over = true;
+		else
+			nextFrame = (nextFrame + size_buffer - 1) % size_buffer;
 	}
 
 	const unsigned nSimP = std::min(prms.Nmax, (unsigned)bestPatches.size());
@@ -696,16 +690,16 @@ int computeSimilarPatches(
 	while((output[ind_thresh] > prms.tau) && (ind_thresh > 0))
 		ind_thresh--;
 
-    int candidates = closest_power_of_2(ind_thresh+1);
+	int candidates = closest_power_of_2(ind_thresh+1);
 
 #ifdef MTRICK
-    // Artificially adds a candidate when there's only the reference patch left 
-    if(candidates == 1)
-    {
-        candidates = 2;
-        output[1] = output[0];
-        index[1] = index[0];
-    }
+	// Artificially adds a candidate when there's only the reference patch left 
+	if(candidates == 1)
+	{
+		candidates = 2;
+		output[1] = output[0];
+		index[1] = index[0];
+	}
 #endif
 
 	return candidates;
@@ -748,10 +742,10 @@ void dct_2d_process(
 		const unsigned dc_p = c * kHW_2 * patch_table.size();
 		for(unsigned n = 0; n < patch_table.size(); ++n)
 		{
-            for (unsigned p = 0; p < kHW; p++)
-                for (unsigned q = 0; q < kHW; q++)
-                    vec[p * kHW + q + dc_p + n * kHW_2] =
-                        buffer[patch_table[n].first][patch_table[n].second + d*(p*w+q)];
+			for (unsigned p = 0; p < kHW; p++)
+			for (unsigned q = 0; q < kHW; q++)
+				vec[p * kHW + q + dc_p + n * kHW_2] =
+					buffer[patch_table[n].first][patch_table[n].second + d*(p*w+q)];
 		}
 	}
 
@@ -764,9 +758,9 @@ void dct_2d_process(
 	{
 		const unsigned dc_p = c * kHW_2 * patch_table.size();
 		for(unsigned n = 0; n < patch_table.size(); ++n)
-            for (unsigned k = 0; k < kHW_2; k++)
-                DCT_table_2D[dc_p + n * kHW_2 + k] =
-                    dct[dc_p + n * kHW_2 + k] * coef_norm[k];
+		for (unsigned k = 0; k < kHW_2; k++)
+			DCT_table_2D[dc_p + n * kHW_2 + k] =
+				dct[dc_p + n * kHW_2 + k] * coef_norm[k];
 	}
 	fftwf_free(dct);
 }
@@ -802,7 +796,7 @@ void bior_2d_process(
 	{
 		const unsigned dc_p = c * kHW_2 * patch_table.size();
 		for(unsigned n = 0; n < patch_table.size(); ++n)
-            bior_2d_forward(buffer, w, bior_table_2D, kHW, patch_table[n].second + c, patch_table[n].first, d, dc_p + n * kHW_2, lpd, hpd);
+			bior_2d_forward(buffer, w, bior_table_2D, kHW, patch_table[n].second + c, patch_table[n].first, d, dc_p + n * kHW_2, lpd, hpd);
 	}
 }
 
@@ -850,9 +844,9 @@ void ht_filtering_hadamard(
 		for (unsigned k = 0; k < kHard_2 * nSx_r; k++)
 		{
 #ifdef DCTHRESH
-            if (fabs(group_3D[k + dc]) > T)
+			if (fabs(group_3D[k + dc]) > T)
 #else
-            if (k < nSx_r || fabs(group_3D[k + dc]) > T)
+			if (k < nSx_r || fabs(group_3D[k + dc]) > T)
 #endif
 				weight_table[c]++;
 			else
@@ -915,9 +909,9 @@ void ht_filtering_haar(
 		for (unsigned k = 0; k < kHard_2 * nSx_r; k++)
 		{
 #ifdef DCTHRESH
-            if (fabs(group_3D[k + dc]) > T)
+			if (fabs(group_3D[k + dc]) > T)
 #else
-            if (k < nSx_r || fabs(group_3D[k + dc]) > T)
+			if (k < nSx_r || fabs(group_3D[k + dc]) > T)
 #endif
 				weight_table[c]++;
 			else
@@ -979,7 +973,7 @@ void wiener_filtering_hadamard(
 #ifdef DCWIENER
 		for (unsigned k = 0; k < kWien_2 * nSx_r; k++)
 #else
-        for (unsigned k = nSx_r; k < kWien_2 * nSx_r; k++)
+		for (unsigned k = nSx_r; k < kWien_2 * nSx_r; k++)
 #endif
 		{
 			float value = group_3D_est[dc + k] * group_3D_est[dc + k] * coef;
@@ -988,8 +982,8 @@ void wiener_filtering_hadamard(
 			weight_table[c] += (value*value);
 		}
 #ifndef DCWIENER
-        // Add the weight corresponding to the DC components that was not thresholded
-        weight_table[c] += nSx_r; 
+		// Add the weight corresponding to the DC components that was not thresholded
+		weight_table[c] += nSx_r; 
 #endif
 	}
 
@@ -1048,7 +1042,7 @@ void wiener_filtering_haar(
 #ifdef DCWIENER
 		for (unsigned k = 0; k < kWien_2 * nSx_r; k++)
 #else
-        for (unsigned k = nSx_r; k < kWien_2 * nSx_r; k++)
+		for (unsigned k = nSx_r; k < kWien_2 * nSx_r; k++)
 #endif
 		{
 			float value = group_3D_est[dc + k] * group_3D_est[dc + k];
@@ -1057,8 +1051,8 @@ void wiener_filtering_haar(
 			weight_table[c] += (value*value);
 		}
 #ifndef DCWIENER
-        // Add the weight corresponding to the DC components that were not thresholded
-        weight_table[c] += nSx_r; 
+		// Add the weight corresponding to the DC components that were not thresholded
+		weight_table[c] += nSx_r; 
 #endif
 	}
 
@@ -1099,8 +1093,8 @@ void dct_2d_inv(
 
 	//! Normalization
 	for (unsigned n = 0; n < Ns; n++)
-        for (unsigned k = 0; k < kHW_2; k++)
-            dct[k + n * kHW_2] = group_3D_table[k + n * kHW_2] * coef_norm_inv[k];
+	for (unsigned k = 0; k < kHW_2; k++)
+		dct[k + n * kHW_2] = group_3D_table[k + n * kHW_2] * coef_norm_inv[k];
 
 	//! 2D dct inverse
 	fftwf_execute_r2r(*plan, dct, vec);
@@ -1116,25 +1110,22 @@ void dct_2d_inv(
 }
 
 void bior_2d_inv(
-		vector<float> &group_3D_table
-		,   const unsigned kHW
-		,   vector<float> const& lpr
-		,   vector<float> const& hpr
-		){
+	vector<float> &group_3D_table
+,	const unsigned kHW
+,	vector<float> const& lpr
+,	vector<float> const& hpr
+){
 	//! Declarations
 	const unsigned kHW_2 = kHW * kHW;
 	const unsigned N = group_3D_table.size() / kHW_2;
 
 	//! Bior process
 	for (unsigned n = 0; n < N; n++)
-        bior_2d_inverse(group_3D_table, kHW, n * kHW_2, lpr, hpr);
+	bior_2d_inverse(group_3D_table, kHW, n * kHW_2, lpr, hpr);
 }
 
-/** ----------------- **/
-/** - Preprocessing - **/
-/** ----------------- **/
 /**
- * @brief Preprocess
+ * @brief Compute Kaiser Window
  *
  * @param window[k * k]: Will contain values of a Kaiser Window;
  * @param coef_norm: Will contain values used to normalize the 2D DCT;

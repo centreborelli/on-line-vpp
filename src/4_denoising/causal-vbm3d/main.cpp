@@ -107,7 +107,8 @@ void initializeParameters_2(
 
 int main(int argc, char **argv)
 {
-    //! Check if there is the right call for the algorithm
+	clo_usage("Causal version of the VBM3D video denoising method");
+	clo_help(" NOTE: Input (<) and output (>) sequences have to be vpp pipes.\n");
 
 	using std::string;
 	const string  input_path = clo_option("-i", "-", "< input pipe");
@@ -138,137 +139,108 @@ int main(int argc, char **argv)
 	const int   dWien    = clo_option("-dW"   , -1 , "< d offset in distance");
 	const float tauWien  = clo_option("-tauW" , -1., "< distance threshold");
 	const unsigned color_space  =  (unsigned) clo_option("-color", 0 , "< color space");
+	const unsigned T_2D_hard  = (unsigned) clo_option("-T2dh", NONE , "< Spatial transform for hard thresholding step");
+	const unsigned T_2D_wien  = (unsigned) clo_option("-T2dw", NONE , "< Spatial transform for Wiener filtering step");
+	const unsigned T_3D_hard  = (unsigned) clo_option("-T3dh", NONE , "< 3rd dimension transform for hard thresholding step");
+	const unsigned T_3D_wien  = (unsigned) clo_option("-T3dw", NONE , "< 3rd dimension transform for Wiener filtering step");
 
 	//! Check inputs
 	if (input_path == "")
-	{
-		fprintf(stderr, "%s: no input images.\nTry `%s --help' for more information.\n",
-				argv[0], argv[0]);
-		return EXIT_FAILURE;
-	}
+		return fprintf(stderr, "%s: no input images.\nTry `%s --help' for more information.\n",
+				argv[0], argv[0]), 1;
 
-	//! Variables initialization
-	const unsigned T_2D_hard  = (unsigned) clo_option("-T2dh", NONE , "< tau_2D_hard");
 	if (T_2D_hard != NONE && T_2D_hard != DCT && T_2D_hard != BIOR)
-	{
-		cout << "T_2d_hard is not known. Choice is :" << endl;
-		cout << " -dct (" << DCT << ")" << endl;
-		cout << " -bior (" << BIOR << ")" << endl;
-		return EXIT_FAILURE;
-	}
+		return fprintf(stderr, "Unknown T2D_H: %d for DCT %d for bi-orthogonal\n", DCT, BIOR), 1;
 
-	const unsigned T_2D_wien  = (unsigned) clo_option("-T2dw", NONE , "< tau_2D_wien");
 	if (T_2D_wien != NONE && T_2D_wien != DCT && T_2D_wien != BIOR)
-	{
-		cout << "T_2d_wien is not known. Choice is :" << endl;
-		cout << " -dct (" << DCT << ")" << endl;
-		cout << " -bior (" << BIOR << ")" << endl;
-		return EXIT_FAILURE;
-	};
+		return fprintf(stderr, "Unknown T2D_W: %d for DCT %d for bi-orthogonal\n", DCT, BIOR), 1;
 
-	const unsigned T_3D_hard  = (unsigned) clo_option("-T3dh", NONE , "< tau_3D_hard");
 	if (T_3D_hard != NONE && T_3D_hard != HAAR && T_3D_hard != HADAMARD)
-	{
-		cout << "T_3d_hard is not known. Choice is :" << endl;
-		cout << " -haar (" << HAAR << ")" << endl;
-		cout << " -hadamard (" << HADAMARD << ")" << endl;
-		return EXIT_FAILURE;
-	}
+		return fprintf(stderr, "Unknown T3D_H: %d for HAAR %d for HADAMARD\n", HAAR, HADAMARD), 1;
 
-	const unsigned T_3D_wien  = (unsigned) clo_option("-T3dw", NONE , "< tau_3D_wien");
 	if (T_3D_wien != NONE && T_3D_wien != HAAR && T_3D_wien != HADAMARD)
-	{
-		cout << "T_3d_wien is not known. Choice is :" << endl;
-		cout << " -haar (" << HAAR << ")" << endl;
-		cout << " -hadamard (" << HADAMARD << ")" << endl;
-		return EXIT_FAILURE;
-	};
+		return fprintf(stderr, "Unknown T3D_W: %d for HAAR %d for HADAMARD\n", HAAR, HADAMARD), 1;
 
+	//! Initialize parameters
 	Parameters prms_1;
 	Parameters prms_2;
-
 	initializeParameters_1(prms_1, kHard, NfHard, NsHard, NprHard, NbHard, pHard, NHard, dHard, tauHard, lambda3D, T_2D_hard, T_3D_hard, fSigma);
-	initializeParameters_2(prms_2, kWien, NfWien, NsWien, NprWien, NbWien, pWien, NWien, dWien, tauWien, T_2D_wien, T_3D_wien, fSigma);
-
-	if(prms_1.k <= 0)
-	{
-		cout << "Invalid patch size for the first step" << endl;
-		return EXIT_FAILURE;
-	}
+	initializeParameters_2(prms_2, kWien, NfWien, NsWien, NprWien, NbWien, pWien, NWien, dWien, tauWien,           T_2D_wien, T_3D_wien, fSigma);
 
 	// Force both buffer to have the same size for now
 	prms_2.Nf = prms_1.Nf;
-
 
 	//! Preprocessing (KaiserWindow, Threshold, DCT normalization, ...)
 	int kHard_2 = prms_1.k*prms_1.k;
 	vector<float> kaiser_window_1(kHard_2);
 	vector<float> coef_norm_1(kHard_2);
 	vector<float> coef_norm_inv_1(kHard_2);
-	preProcess(kaiser_window_1, coef_norm_1, coef_norm_inv_1, prms_1.k);
+	kaiserWindow(kaiser_window_1, coef_norm_1, coef_norm_inv_1, prms_1.k);
 
 	int kWien_2 = prms_2.k*prms_2.k;
 	vector<float> kaiser_window_2(kWien_2);
 	vector<float> coef_norm_2(kWien_2);
 	vector<float> coef_norm_inv_2(kWien_2);
-	preProcess(kaiser_window_2, coef_norm_2, coef_norm_inv_2, prms_2.k);
+	kaiserWindow(kaiser_window_2, coef_norm_2, coef_norm_inv_2, prms_2.k);
 
 	//! Preprocessing of Bior table
 	vector<float> lpd, hpd, lpr, hpr;
 	bior15_coef(lpd, hpd, lpr, hpr);
 
-	//! Declarations
+	//! Init pipes
 	int w,h,d;
 	FILE* in = vpp_init_input(input_path.c_str(), &w, &h, &d);
 	if (!in)
 		return fprintf(stderr, "vbm3d: cannot initialize input '%s'\n", input_path.c_str()), 1;
+
 	FILE* out = vpp_init_output(final_path.c_str(), w, h, d);
 	if (!out)
 		return fprintf(stderr, "vbm3d: cannot initialize output '%s'\n", final_path.c_str()), 1;
-	int s1, s2, s3;
-	FILE* sigma_in = vpp_init_input(sigma_path.c_str(), &s1, &s2, &s3);
+
+	int sw, sh, sd;
+	FILE* sigma_in = vpp_init_input(sigma_path.c_str(), &sw, &sh, &sd);
 	float sigma;
 	if (!sigma_in)
-	{
-		fprintf(stderr, "vbm3d: cannot initialize sigma '%s'\n", sigma_path.c_str());
-		return EXIT_FAILURE;
-	}
-	if (s1 != 2 || s2 != 1 || s3 != 1)
-	{
-		fprintf(stderr, "vbm3d: invalid sigma stream dimensions: %dx%dx%d\n",
-				s1, s2, s3);
-		return EXIT_FAILURE;
-	}
+		return fprintf(stderr, "vbm3d: cannot initialize sigma '%s'\n", sigma_path.c_str()), 1;
 
+	if (sw != 2 || sh != 1 || sd != 1)
+		return fprintf(stderr, "vbm3d: invalid sigma stream size: %dx%dx%d\n", sw, sh, sd), 1;
+
+	//! Initialize the buffers to store the previous frames
 	vector<float*> buffer_input(prms_1.Nf, NULL);
 	vector<float*> buffer_basic(prms_2.Nf, NULL);
-	float* final_estimate;
-
-	//! Initialize the buffers
 	for(int i = 0; i < prms_1.Nf; ++i)
 	{
 		buffer_input[i] = (float*) malloc(w*h*d*sizeof(*(buffer_input[i])));
 		buffer_basic[i] = (float*) malloc(w*h*d*sizeof(*(buffer_basic[i])));
 	}
+	//! Buffer for denoised frame
+	float* final_estimate;
 	final_estimate = (float*) malloc(w*h*d*sizeof*final_estimate);
 
 	//! Process the frames
 	int size_buffer = 0;
 	int index = 0;
-	while (vpp_read_frame(in, buffer_input[index], w, h, d)) {
+	while (vpp_read_frame(in, buffer_input[index], w, h, d))
+	{
 
-		float sigmadata[2];
-		vpp_read_frame(sigma_in, sigmadata, s1, s2, s3);
-		sigma = sigmadata[1];
+		// Update buffer size
 		size_buffer = std::min(size_buffer+1, (int)prms_1.Nf);
+
+		// Read noise level
+		float sigmadata[2];
+		vpp_read_frame(sigma_in, sigmadata, sw, sh, sd);
+		sigma = sigmadata[1];
+
 
 		// Change colorspace (RGB to OPP)
 		if(color_space == 0)
 			transformColorSpace(buffer_input[index], w, h, d, true);
 
-		if (run_vbm3d(sigma, buffer_input, buffer_basic, final_estimate, w, h, d, prms_1, prms_2, index, size_buffer, kaiser_window_1, coef_norm_1, coef_norm_inv_1, kaiser_window_2, coef_norm_2, coef_norm_inv_2, lpd, hpd, lpr, hpr)
-				!= EXIT_SUCCESS)
-			return EXIT_FAILURE;
+		run_vbm3d(sigma, buffer_input, buffer_basic, final_estimate, w, h, d,
+				prms_1, prms_2, index, size_buffer, kaiser_window_1, coef_norm_1,
+				coef_norm_inv_1, kaiser_window_2, coef_norm_2, coef_norm_inv_2,
+				lpd, hpd, lpr, hpr);
 
 		// Inverse the colorspace for the output (OPP to RGB)
 		if(color_space == 0)

@@ -13,7 +13,7 @@
 /** - Main functions - **/
 /** ------------------ **/
 //! Main function
-int run_vbm3d(
+void run_vbm3d(
     const float sigma
 ,   std::vector<float*> &buffer_input
 ,   std::vector<float*> &buffer_basic
@@ -192,7 +192,7 @@ void wiener_filtering_haar(
 /** - Preprocessing / Postprocessing - **/
 /** ---------------------------------- **/
 //! Preprocess coefficients of the Kaiser window and normalization coef for the DCT
-void preProcess(
+void kaiserWindow(
     std::vector<float> &kaiserWindow
 ,   std::vector<float> &coef_norm
 ,   std::vector<float> &coef_norm_inv

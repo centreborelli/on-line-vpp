@@ -90,10 +90,9 @@ bool ComparaisonFirst(pair<float,unsigned> pair1, pair<float,unsigned> pair2)
  * @param coef_norm_inv_2: inverse normalization coeffs for the second step;
  * @param lpd, hpd, lpr, hpr: bior basis;
  *
- * @return EXIT_FAILURE if color_space has not expected
- *         type, otherwise return EXIT_SUCCESS.
+ * @return none
  **/
-int run_vbm3d(
+void run_vbm3d(
     const float sigma
 ,   std::vector<float*> &buffer_input
 ,   std::vector<float*> &buffer_basic
@@ -167,8 +166,6 @@ int run_vbm3d(
         for (unsigned k = 0; k < w*h*d; k++)
             final_estimate[k] = buffer_basic[index][k];
     }
-
-	return EXIT_SUCCESS;
 }
 
 /**
@@ -1139,127 +1136,127 @@ void bior_2d_inv(
 /**
  * @brief Preprocess
  *
- * @param kaiser_window[kHW * kHW]: Will contain values of a Kaiser Window;
+ * @param window[k * k]: Will contain values of a Kaiser Window;
  * @param coef_norm: Will contain values used to normalize the 2D DCT;
  * @param coef_norm_inv: Will contain values used to normalize the 2D DCT;
- * @param kHW: size of patches (need to be 8 or 12).
+ * @param k: size of patches (need to be 4, 6, 7, 8 or 12).
  *
  * @return none.
  **/
-void preProcess(
-		vector<float> &kaiserWindow
-		,   vector<float> &coef_norm
-		,   vector<float> &coef_norm_inv
-		,   const unsigned kHW
-	       ){
+void kaiserWindow(
+	vector<float> &win
+,	vector<float> &coef_norm
+,	vector<float> &coef_norm_inv
+,	const unsigned k
+){
 	//! Kaiser Window coefficients
-	if(kHW == 4)
+	if(k == 4)
 	{
 		//! First quarter of the matrix
-		kaiserWindow[0 + kHW * 0] = 0.1924f; kaiserWindow[0 + kHW * 1] = 0.4055f;
-		kaiserWindow[1 + kHW * 0] = 0.4055f; kaiserWindow[1 + kHW * 1] = 0.8544f;
+		win[0+k*0] = 0.1924f; win[0+k*1] = 0.4055f;
+		win[1+k*0] = 0.4055f; win[1+k*1] = 0.8544f;
 
 		//! Completing the rest of the matrix by symmetry
-		for(unsigned i = 0; i < kHW / 2; i++)
-			for (unsigned j = kHW / 2; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[i + kHW * (kHW - j - 1)];
+		for(unsigned i = 0; i < k / 2; i++)
+			for (unsigned j = k / 2; j < k; j++)
+				win[i + k * j] = win[i + k * (k - j - 1)];
 
-		for (unsigned i = kHW / 2; i < kHW; i++)
-			for (unsigned j = 0; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[kHW - i - 1 + kHW * j];
+		for (unsigned i = k / 2; i < k; i++)
+			for (unsigned j = 0; j < k; j++)
+				win[i + k * j] = win[k - i - 1 + k * j];
 	}
-	else if (kHW == 6)
+	else if (k == 6)
 	{
 		//! First quarter of the matrix
-		kaiserWindow[0 + kHW * 0] = 0.1924f; kaiserWindow[0 + kHW * 1] = 0.3368f; kaiserWindow[0 + kHW * 2] = 0.4265f;
-		kaiserWindow[1 + kHW * 0] = 0.3368f; kaiserWindow[1 + kHW * 1] = 0.5893f; kaiserWindow[1 + kHW * 2] = 0.7464f;
-		kaiserWindow[2 + kHW * 0] = 0.4265f; kaiserWindow[2 + kHW * 1] = 0.7464f; kaiserWindow[2 + kHW * 2] = 0.9454f;
+		win[0+k*0] = 0.1924f; win[0+k*1] = 0.3368f; win[0+k*2] = 0.4265f;
+		win[1+k*0] = 0.3368f; win[1+k*1] = 0.5893f; win[1+k*2] = 0.7464f;
+		win[2+k*0] = 0.4265f; win[2+k*1] = 0.7464f; win[2+k*2] = 0.9454f;
 
 		//! Completing the rest of the matrix by symmetry
-		for(unsigned i = 0; i < kHW / 2; i++)
-			for (unsigned j = kHW / 2; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[i + kHW * (kHW - j - 1)];
+		for(unsigned i = 0; i < k / 2; i++)
+			for (unsigned j = k / 2; j < k; j++)
+				win[i + k * j] = win[i + k * (k - j - 1)];
 
-		for (unsigned i = kHW / 2; i < kHW; i++)
-			for (unsigned j = 0; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[kHW - i - 1 + kHW * j];
+		for (unsigned i = k / 2; i < k; i++)
+			for (unsigned j = 0; j < k; j++)
+				win[i + k * j] = win[k - i - 1 + k * j];
 	}
-	else if (kHW == 7)
+	else if (k == 7)
 	{
 		//! First quarter of the matrix
-		kaiserWindow[0 + kHW * 0] = 0.1924f; kaiserWindow[0 + kHW * 1] = 0.3151f; kaiserWindow[0 + kHW * 2] = 0.4055f; kaiserWindow[0 + kHW * 3] = 0.4387f;
-		kaiserWindow[1 + kHW * 0] = 0.3151f; kaiserWindow[1 + kHW * 1] = 0.5161f; kaiserWindow[1 + kHW * 2] = 0.6640f; kaiserWindow[1 + kHW * 3] = 0.7184f;
-		kaiserWindow[2 + kHW * 0] = 0.4055f; kaiserWindow[2 + kHW * 1] = 0.6640f; kaiserWindow[2 + kHW * 2] = 0.8544f; kaiserWindow[2 + kHW * 3] = 0.9243f;
-		kaiserWindow[3 + kHW * 0] = 0.4387f; kaiserWindow[3 + kHW * 1] = 0.7184f; kaiserWindow[3 + kHW * 2] = 0.9243f; kaiserWindow[3 + kHW * 3] = 1.0000f; 
+		win[0+k*0] = 0.1924f; win[0+k*1] = 0.3151f; win[0+k*2] = 0.4055f; win[0+k*3] = 0.4387f;
+		win[1+k*0] = 0.3151f; win[1+k*1] = 0.5161f; win[1+k*2] = 0.6640f; win[1+k*3] = 0.7184f;
+		win[2+k*0] = 0.4055f; win[2+k*1] = 0.6640f; win[2+k*2] = 0.8544f; win[2+k*3] = 0.9243f;
+		win[3+k*0] = 0.4387f; win[3+k*1] = 0.7184f; win[3+k*2] = 0.9243f; win[3+k*3] = 1.0000f; 
 
 		//! Completing the rest of the matrix by symmetry
-		for(unsigned i = 0; i <= kHW / 2; i++)
-			for (unsigned j = kHW / 2 + 1; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[i + kHW * (kHW - j - 1)];
+		for(unsigned i = 0; i <= k / 2; i++)
+			for (unsigned j = k / 2 + 1; j < k; j++)
+				win[i + k * j] = win[i + k * (k - j - 1)];
 
-		for (unsigned i = kHW / 2 + 1; i < kHW; i++)
-			for (unsigned j = 0; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[kHW - i - 1 + kHW * j];
+		for (unsigned i = k / 2 + 1; i < k; i++)
+			for (unsigned j = 0; j < k; j++)
+				win[i + k * j] = win[k - i - 1 + k * j];
 	}
-	else if (kHW == 8)
+	else if (k == 8)
 	{
 		//! First quarter of the matrix
-		kaiserWindow[0 + kHW * 0] = 0.1924f; kaiserWindow[0 + kHW * 1] = 0.2989f; kaiserWindow[0 + kHW * 2] = 0.3846f; kaiserWindow[0 + kHW * 3] = 0.4325f;
-		kaiserWindow[1 + kHW * 0] = 0.2989f; kaiserWindow[1 + kHW * 1] = 0.4642f; kaiserWindow[1 + kHW * 2] = 0.5974f; kaiserWindow[1 + kHW * 3] = 0.6717f;
-		kaiserWindow[2 + kHW * 0] = 0.3846f; kaiserWindow[2 + kHW * 1] = 0.5974f; kaiserWindow[2 + kHW * 2] = 0.7688f; kaiserWindow[2 + kHW * 3] = 0.8644f;
-		kaiserWindow[3 + kHW * 0] = 0.4325f; kaiserWindow[3 + kHW * 1] = 0.6717f; kaiserWindow[3 + kHW * 2] = 0.8644f; kaiserWindow[3 + kHW * 3] = 0.9718f;
+		win[0+k*0] = 0.1924f; win[0+k*1] = 0.2989f; win[0+k*2] = 0.3846f; win[0+k*3] = 0.4325f;
+		win[1+k*0] = 0.2989f; win[1+k*1] = 0.4642f; win[1+k*2] = 0.5974f; win[1+k*3] = 0.6717f;
+		win[2+k*0] = 0.3846f; win[2+k*1] = 0.5974f; win[2+k*2] = 0.7688f; win[2+k*3] = 0.8644f;
+		win[3+k*0] = 0.4325f; win[3+k*1] = 0.6717f; win[3+k*2] = 0.8644f; win[3+k*3] = 0.9718f;
 
 		//! Completing the rest of the matrix by symmetry
-		for(unsigned i = 0; i < kHW / 2; i++)
-			for (unsigned j = kHW / 2; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[i + kHW * (kHW - j - 1)];
+		for(unsigned i = 0; i < k / 2; i++)
+			for (unsigned j = k / 2; j < k; j++)
+				win[i + k * j] = win[i + k * (k - j - 1)];
 
-		for (unsigned i = kHW / 2; i < kHW; i++)
-			for (unsigned j = 0; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[kHW - i - 1 + kHW * j];
+		for (unsigned i = k / 2; i < k; i++)
+			for (unsigned j = 0; j < k; j++)
+				win[i + k * j] = win[k - i - 1 + k * j];
 	}
-	else if (kHW == 12)
+	else if (k == 12)
 	{
 		//! First quarter of the matrix
-		kaiserWindow[0 + kHW * 0] = 0.1924f; kaiserWindow[0 + kHW * 1] = 0.2615f; kaiserWindow[0 + kHW * 2] = 0.3251f; kaiserWindow[0 + kHW * 3] = 0.3782f;  kaiserWindow[0 + kHW * 4] = 0.4163f;  kaiserWindow[0 + kHW * 5] = 0.4362f;
-		kaiserWindow[1 + kHW * 0] = 0.2615f; kaiserWindow[1 + kHW * 1] = 0.3554f; kaiserWindow[1 + kHW * 2] = 0.4419f; kaiserWindow[1 + kHW * 3] = 0.5139f;  kaiserWindow[1 + kHW * 4] = 0.5657f;  kaiserWindow[1 + kHW * 5] = 0.5927f;
-		kaiserWindow[2 + kHW * 0] = 0.3251f; kaiserWindow[2 + kHW * 1] = 0.4419f; kaiserWindow[2 + kHW * 2] = 0.5494f; kaiserWindow[2 + kHW * 3] = 0.6390f;  kaiserWindow[2 + kHW * 4] = 0.7033f;  kaiserWindow[2 + kHW * 5] = 0.7369f;
-		kaiserWindow[3 + kHW * 0] = 0.3782f; kaiserWindow[3 + kHW * 1] = 0.5139f; kaiserWindow[3 + kHW * 2] = 0.6390f; kaiserWindow[3 + kHW * 3] = 0.7433f;  kaiserWindow[3 + kHW * 4] = 0.8181f;  kaiserWindow[3 + kHW * 5] = 0.8572f;
-		kaiserWindow[4 + kHW * 0] = 0.4163f; kaiserWindow[4 + kHW * 1] = 0.5657f; kaiserWindow[4 + kHW * 2] = 0.7033f; kaiserWindow[4 + kHW * 3] = 0.8181f;  kaiserWindow[4 + kHW * 4] = 0.9005f;  kaiserWindow[4 + kHW * 5] = 0.9435f;
-		kaiserWindow[5 + kHW * 0] = 0.4362f; kaiserWindow[5 + kHW * 1] = 0.5927f; kaiserWindow[5 + kHW * 2] = 0.7369f; kaiserWindow[5 + kHW * 3] = 0.8572f;  kaiserWindow[5 + kHW * 4] = 0.9435f;  kaiserWindow[5 + kHW * 5] = 0.9885f;
+		win[0+k*0] = 0.1924f; win[0+k*1] = 0.2615f; win[0+k*2] = 0.3251f; win[0+k*3] = 0.3782f;  win[0+k*4] = 0.4163f;  win[0+k*5] = 0.4362f;
+		win[1+k*0] = 0.2615f; win[1+k*1] = 0.3554f; win[1+k*2] = 0.4419f; win[1+k*3] = 0.5139f;  win[1+k*4] = 0.5657f;  win[1+k*5] = 0.5927f;
+		win[2+k*0] = 0.3251f; win[2+k*1] = 0.4419f; win[2+k*2] = 0.5494f; win[2+k*3] = 0.6390f;  win[2+k*4] = 0.7033f;  win[2+k*5] = 0.7369f;
+		win[3+k*0] = 0.3782f; win[3+k*1] = 0.5139f; win[3+k*2] = 0.6390f; win[3+k*3] = 0.7433f;  win[3+k*4] = 0.8181f;  win[3+k*5] = 0.8572f;
+		win[4+k*0] = 0.4163f; win[4+k*1] = 0.5657f; win[4+k*2] = 0.7033f; win[4+k*3] = 0.8181f;  win[4+k*4] = 0.9005f;  win[4+k*5] = 0.9435f;
+		win[5+k*0] = 0.4362f; win[5+k*1] = 0.5927f; win[5+k*2] = 0.7369f; win[5+k*3] = 0.8572f;  win[5+k*4] = 0.9435f;  win[5+k*5] = 0.9885f;
 
 		//! Completing the rest of the matrix by symmetry
-		for(unsigned i = 0; i < kHW / 2; i++)
-			for (unsigned j = kHW / 2; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[i + kHW * (kHW - j - 1)];
+		for(unsigned i = 0; i < k / 2; i++)
+			for (unsigned j = k / 2; j < k; j++)
+				win[i + k * j] = win[i + k * (k - j - 1)];
 
-		for (unsigned i = kHW / 2; i < kHW; i++)
-			for (unsigned j = 0; j < kHW; j++)
-				kaiserWindow[i + kHW * j] = kaiserWindow[kHW - i - 1 + kHW * j];
+		for (unsigned i = k / 2; i < k; i++)
+			for (unsigned j = 0; j < k; j++)
+				win[i + k * j] = win[k - i - 1 + k * j];
 	}
 	else
-		for (unsigned k = 0; k < kHW * kHW; k++)
-			kaiserWindow[k] = 1.0f;
+		for (unsigned i = 0; i < k * k; i++)
+			win[i] = 1.0f;
 
 	//! Coefficient of normalization for DCT II and DCT II inverse
-	const float coef = 0.5f / ((float) (kHW));
-	for (unsigned i = 0; i < kHW; i++)
-		for (unsigned j = 0; j < kHW; j++)
+	const float coef = 0.5f / ((float) (k));
+	for (unsigned i = 0; i < k; i++)
+		for (unsigned j = 0; j < k; j++)
 		{
 			if (i == 0 && j == 0)
 			{
-				coef_norm    [i * kHW + j] = 0.5f * coef;
-				coef_norm_inv[i * kHW + j] = 2.0f;
+				coef_norm    [i * k + j] = 0.5f * coef;
+				coef_norm_inv[i * k + j] = 2.0f;
 			}
 			else if (i * j == 0)
 			{
-				coef_norm    [i * kHW + j] = SQRT2_INV * coef;
-				coef_norm_inv[i * kHW + j] = SQRT2;
+				coef_norm    [i * k + j] = SQRT2_INV * coef;
+				coef_norm_inv[i * k + j] = SQRT2;
 			}
 			else
 			{
-				coef_norm    [i * kHW + j] = 1.0f * coef;
-				coef_norm_inv[i * kHW + j] = 1.0f;
+				coef_norm    [i * k + j] = 1.0f * coef;
+				coef_norm_inv[i * k + j] = 1.0f;
 			}
 		}
 }

@@ -53,62 +53,19 @@ void initializeParameters_1(
 ,	const unsigned T_3D
 ,	const float sigma
 ){
-	if(k < 0)
-		prms.k = 8;
-	else
-		prms.k = k;
-
-	if(Nf < 0)
-		prms.Nf = 4;
-	else
-		prms.Nf = Nf;
-	if(Ns < 0)
-		prms.Ns = 7;
-	else
-		prms.Ns = Ns;
-	if(Npr < 0)
-		prms.Npr = 5;
-	else
-		prms.Npr = Npr;
-	if(Nb < 0)
-		prms.Nb = 2;
-	else
-		prms.Nb = Nb;
-
-	if(d < 0)
-		prms.d = (7*7)/(255.*255.);
-	else
-		prms.d = (d*d)/(255.*255.);
-
-	if(p < 0)
-		prms.p = 6;
-	else
-		prms.p = p;
-
-	if(N < 0)
-		prms.N = 8;
-	else
-		prms.N = N;
-
-	if(tau < 0)
-		prms.tau = (sigma > 30) ? 4500/(255.*255.) : 3000/(255.*255.);
-	else
-		prms.tau = tau;
-
-	if(lambda3D < 0)
-		prms.lambda3D = 2.7f;
-	else
-		prms.lambda3D = lambda3D;
-
-	if(T_2D == NONE)
-		prms.T_2D = BIOR;
-	else
-		prms.T_2D = T_2D;
-
-	if(T_3D == NONE)
-		prms.T_3D = HAAR;
-	else
-		prms.T_3D = T_3D;
+	const float n = 1./255./255.;
+	prms.k   = (k   < 0) ? 8 : k;
+	prms.Nf  = (Nf  < 0) ? 4 : Nf;
+	prms.Ns  = (Ns  < 0) ? 7 : Ns;
+	prms.Npr = (Npr < 0) ? 5 : Npr;
+	prms.Nb  = (Nb  < 0) ? 2 : Nb;
+	prms.d   = (d   < 0) ? 7.*7.*n : d*d*n;
+	prms.p   = (p   < 0) ? 6 : p;
+	prms.N   = (N   < 0) ? 8 : N;
+	prms.lambda3D = (lambda3D < 0) ? 2.7f : lambda3D;
+	prms.T_2D = (T_2D == NONE) ? BIOR : T_2D;
+	prms.T_3D = (T_3D == NONE) ? HAAR : T_3D;
+	prms.tau = (tau < 0) ? ( (sigma > 30) ? 4500 : 3000 )*n : tau;
 }
 
 void initializeParameters_2(
@@ -126,58 +83,18 @@ void initializeParameters_2(
 ,	const unsigned T_3D
 ,	const float sigma
 ){
-	if(k < 0)
-		prms.k = (sigma > 30) ? 8 : 7;
-	else
-		prms.k = k;
-
-	if(Nf < 0)
-		prms.Nf = 4;
-	else
-		prms.Nf = Nf;
-
-	if(Ns < 0)
-		prms.Ns = 7;
-	else
-		prms.Ns = Ns;
-	if(Npr < 0)
-		prms.Npr = 5;
-	else
-		prms.Npr = Npr;
-	if(Nb < 0)
-		prms.Nb = 2;
-	else
-		prms.Nb = Nb;
-
-	if(d < 0)
-		prms.d = (3*3)/(255.*255.);
-	else
-		prms.d = (d*d)/(255.*255.);
-
-	if(p < 0)
-		prms.p = 4;
-	else
-		prms.p = p;
-
-	if(N < 0)
-		prms.N = 8;
-	else
-		prms.N = N;
-
-	if(tau < 0)
-		prms.tau = (sigma > 30) ? 3000/(255.*255.) : 1500/(255.*255.);
-	else
-		prms.tau = tau;
-
-	if(T_2D == NONE)
-		prms.T_2D = DCT;
-	else
-		prms.T_2D = T_2D;
-
-	if(T_3D == NONE)
-		prms.T_3D = HAAR;
-	else
-		prms.T_3D = T_3D;
+	const float n = 1./255./255.;
+	prms.k   = (k   < 0) ? ( (sigma > 30) ? 8 : 7 ) : k;
+	prms.Nf  = (Nf  < 0) ? 4 : Nf;
+	prms.Ns  = (Ns  < 0) ? 7 : Ns;
+	prms.Npr = (Npr < 0) ? 5 : Npr;
+	prms.Nb  = (Nb  < 0) ? 2 : Nb;
+	prms.d   = (d   < 0) ? 3.*3.*n : d*d*n;
+	prms.p   = (p   < 0) ? 4 : p;
+	prms.N   = (N   < 0) ? 8 : N;
+	prms.T_2D = (T_2D == NONE) ? DCT  : T_2D;
+	prms.T_3D = (T_3D == NONE) ? HAAR : T_3D;
+	prms.tau = (tau < 0) ? ( (sigma > 30) ? 3000 : 1500 )*n : tau;
 }
 
 
@@ -185,8 +102,6 @@ void initializeParameters_2(
  * @file   main.cpp
  * @brief  Main executable file. Do not use lib_fftw to
  *         process DCT.
- *
- * @author MARC LEBRUN  <marc.lebrun@cmla.ens-cachan.fr>
  */
 
 

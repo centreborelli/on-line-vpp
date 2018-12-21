@@ -86,7 +86,7 @@ int main(int argc, const char *argv[])
 	}
 	if (ncsigma != 2 || nbbinssigma != 1 || unused != 1)
 	{
-		fprintf(stderr, "kalman: invalid sigma stream dimensions: %dx%dx%dx\n",
+		fprintf(stderr, "kalman: invalid sigma stream dimensions: %dx%dx%d\n",
 				ncsigma, nbbinssigma, unused);
 		return EXIT_FAILURE;
 	}

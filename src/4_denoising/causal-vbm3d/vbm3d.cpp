@@ -125,11 +125,11 @@ void run_vbm3d(
     //! Allocating Plan for FFTW process
     if (prms_1.T_2D == DCT)
     {
-        const unsigned nb_cols = ind_size(0, w - prms_1.k, prms_1.p);
+        const unsigned nb_cols = ind_size(0, w - prms_1.k, prms_1.st);
         allocate_plan_2d(&plan_2d[0], prms_1.k, FFTW_REDFT10,
-                prms_1.N * d);
+                prms_1.Nmax * d);
         allocate_plan_2d(&plan_2d_inv[0], prms_1.k, FFTW_REDFT01,
-                prms_1.N * nb_cols * d);
+                prms_1.Nmax * nb_cols * d);
     }
 
     //! Denoising, 1st Step
@@ -146,11 +146,11 @@ void run_vbm3d(
         //! Allocating Plan for FFTW process
         if (prms_2.T_2D == DCT)
         {
-            const unsigned nb_cols = ind_size(0, (w - prms_2.k), prms_2.p);
+            const unsigned nb_cols = ind_size(0, (w - prms_2.k), prms_2.st);
             allocate_plan_2d(&plan_2d[0], prms_2.k, FFTW_REDFT10,
-                    prms_2.N * d);
+                    prms_2.Nmax * d);
             allocate_plan_2d(&plan_2d_inv[0], prms_2.k, FFTW_REDFT01,
-                    prms_2.N * nb_cols * d);
+                    prms_2.Nmax * nb_cols * d);
         }
         //! Denoising, 2nd Step
         vbm3d_2nd_step(sigma, buffer_input, buffer_basic, final_estimate, denominator, w, h, d, prms_2,
@@ -214,27 +214,27 @@ void vbm3d_1st_step(
 ){
 	//! Initialization for convenience
 	vector<unsigned> row_ind(0);
-    ind_initialize(row_ind, 0, h - prms.k, prms.p);
+    ind_initialize(row_ind, 0, h - prms.k, prms.st);
 
 	vector<unsigned> column_ind(0);
-    ind_initialize(column_ind, 0, w - prms.k, prms.p);
+    ind_initialize(column_ind, 0, w - prms.k, prms.st);
 
-	const unsigned kHard_2 = prms.k * prms.k;
-	vector<float> group_3D_table(d * kHard_2 * prms.N * column_ind.size());
+	const unsigned kH2 = prms.k * prms.k;
+	vector<float> group_3D_table(d * kH2 * prms.Nmax * column_ind.size());
 	vector<float> wx_r_table;
 	wx_r_table.reserve(d * column_ind.size());
-	vector<float> hadamard_tmp(prms.N);
+	vector<float> hadamard_tmp(prms.Nmax);
 
 	//! For aggregation part
     memset(denominator, 0, sizeof(*denominator)*w*h*d);
     memset(basic_estimate, 0, sizeof(*basic_estimate)*w*h*d);
 
 	//! Precompute Bloc-Matching
-	vector<vector<pair<unsigned, unsigned> > > patch_table(column_ind.size(), std::vector<pair<unsigned,unsigned> >(prms.N));
+	vector<vector<pair<unsigned, unsigned> > > patch_table(column_ind.size(), std::vector<pair<unsigned,unsigned> >(prms.Nmax));
 	vector<unsigned> size_patch_table(column_ind.size());
-	vector<float> distances(prms.N);
+	vector<float> distances(prms.Nmax);
 
-	vector<float> table_2D(prms.N * d * kHard_2, 0.0f);
+	vector<float> table_2D(prms.Nmax * d * kH2, 0.0f);
 
     //! Loop on i_r
     for (unsigned ind_i = 0; ind_i < row_ind.size(); ind_i++)
@@ -261,25 +261,25 @@ void vbm3d_1st_step(
                         prms.k, lpd, hpd);
 
             //! Build of the 3D group
-            vector<float> group_3D(d * nSx_r * kHard_2, 0.0f);
+            vector<float> group_3D(d * nSx_r * kH2, 0.0f);
             for(unsigned c = 0; c < d; c++)
                 for (unsigned n = 0; n < nSx_r; n++)
-                    for (unsigned k = 0; k < kHard_2; k++)
-                        group_3D[n + k * nSx_r + c * kHard_2 * nSx_r] =
-                            table_2D[k + n * kHard_2 + c * kHard_2 * prms.N];
+                    for (unsigned k = 0; k < kH2; k++)
+                        group_3D[n + k * nSx_r + c * kH2 * nSx_r] =
+                            table_2D[k + n * kH2 + c * kH2 * prms.Nmax];
 
             //! HT filtering of the 3D group
             vector<float> weight_table(d);
             if(prms.T_3D == HADAMARD)
-                ht_filtering_hadamard(group_3D, hadamard_tmp, nSx_r, prms.k, d, sigma, prms.lambda3D, weight_table);
+                ht_filtering_hadamard(group_3D, hadamard_tmp, nSx_r, prms.k, d, sigma, prms.lambda, weight_table);
             else
-                ht_filtering_haar(group_3D, hadamard_tmp, nSx_r, prms.k, d, sigma, prms.lambda3D, weight_table);
+                ht_filtering_haar(group_3D, hadamard_tmp, nSx_r, prms.k, d, sigma, prms.lambda, weight_table);
 
             //! Save the 3D group. The DCT 2D inverse will be done after.
             for (unsigned c = 0; c < d; c++)
                 for (unsigned n = 0; n < nSx_r; n++)
-                    for (unsigned k = 0; k < kHard_2; k++)
-                        group_3D_table.push_back(group_3D[n + k * nSx_r + c * kHard_2 * nSx_r]);
+                    for (unsigned k = 0; k < kH2; k++)
+                        group_3D_table.push_back(group_3D[n + k * nSx_r + c * kH2 * nSx_r]);
 
             //! Save weighting
             for (unsigned c = 0; c < d; c++)
@@ -289,7 +289,7 @@ void vbm3d_1st_step(
 
         //!  Apply 2D inverse transform
         if (prms.T_2D == DCT)
-            dct_2d_inv(group_3D_table, prms.k, prms.N * d * column_ind.size(),
+            dct_2d_inv(group_3D_table, prms.k, prms.Nmax * d * column_ind.size(),
                     coef_norm_inv, plan_2d_inv);
         else if (prms.T_2D == BIOR)
             bior_2d_inv(group_3D_table, prms.k, lpr, hpr);
@@ -311,14 +311,14 @@ void vbm3d_1st_step(
                             for (unsigned q = 0; q < prms.k; q++)
                             {
                                 basic_estimate[patch_table[ind_j][n].second + d*(p + q*w)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d]
-                                    * group_3D_table[p * prms.k + q + n * kHard_2 + c * kHard_2 * nSx_r + dec];
+                                    * group_3D_table[p * prms.k + q + n * kH2 + c * kH2 * nSx_r + dec];
                                 denominator[patch_table[ind_j][n].second + d*(p + q*w)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d];
                             }
                     }
                 }
             }
 
-            dec += nSx_r * d * kHard_2;
+            dec += nSx_r * d * kH2;
         }
 
     } //! End of loop on i_r
@@ -372,29 +372,29 @@ void vbm3d_2nd_step(
 ){
 	//! Initialization for convenience
 	vector<unsigned> row_ind(0);
-		ind_initialize(row_ind, 0, (h - prms.k), prms.p);
+		ind_initialize(row_ind, 0, (h - prms.k), prms.st);
 
 	vector<unsigned> column_ind(0);
-		ind_initialize(column_ind, 0, (w - prms.k), prms.p);
+		ind_initialize(column_ind, 0, (w - prms.k), prms.st);
 
-	const unsigned kWien_2 = prms.k * prms.k;
-	vector<float> group_3D_table(d * kWien_2 * prms.N * column_ind.size());
+	const unsigned kW2 = prms.k * prms.k;
+	vector<float> group_3D_table(d * kW2 * prms.Nmax * column_ind.size());
 	vector<float> wx_r_table;
 	wx_r_table.reserve(d * column_ind.size());
-	vector<float> tmp(prms.N);
+	vector<float> tmp(prms.Nmax);
 
 	//! For aggregation part
     memset(denominator, 0, sizeof(*denominator)*w*h*d);
     memset(final_estimate, 0, sizeof(*final_estimate)*w*h*d);
 
 	//! Precompute Bloc-Matching
-	vector<vector<pair<unsigned,unsigned> > > patch_table(column_ind.size(), std::vector<pair<unsigned,unsigned> >(prms.N));
+	vector<vector<pair<unsigned,unsigned> > > patch_table(column_ind.size(), std::vector<pair<unsigned,unsigned> >(prms.Nmax));
 	vector<unsigned> size_patch_table(column_ind.size());
-	vector<float> distances(prms.N);
+	vector<float> distances(prms.Nmax);
 
-	//! DCT_table_2D[p * N + q + (i * width + j) * kWien_2 + c * (2 * ns + 1) * width * kWien_2]
-	vector<float> table_2D_vid(prms.N * d * kWien_2, 0.0f);
-	vector<float> table_2D_est(prms.N * d * kWien_2, 0.0f);
+	//! DCT_table_2D[p * N + q + (i * width + j) * kW2 + c * (2 * ns + 1) * width * kW2]
+	vector<float> table_2D_vid(prms.Nmax * d * kW2, 0.0f);
+	vector<float> table_2D_est(prms.Nmax * d * kW2, 0.0f);
 
     //! Loop on i_r
     for (unsigned ind_i = 0; ind_i < row_ind.size(); ind_i++)
@@ -429,17 +429,17 @@ void vbm3d_2nd_step(
             }
 
             //! Build of the 3D group
-            vector<float> group_3D_est(d * nSx_r * kWien_2, 0.0f);
-            vector<float> group_3D_vid(d * nSx_r * kWien_2, 0.0f);
+            vector<float> group_3D_est(d * nSx_r * kW2, 0.0f);
+            vector<float> group_3D_vid(d * nSx_r * kW2, 0.0f);
             for (unsigned c = 0; c < d; c++)
                 for (unsigned n = 0; n < nSx_r; n++)
                 {
-                    for (unsigned k = 0; k < kWien_2; k++)
+                    for (unsigned k = 0; k < kW2; k++)
                     {
-                        group_3D_est[n + k * nSx_r + c * kWien_2 * nSx_r] =
-                            table_2D_est[k + n * kWien_2 + c * kWien_2 * prms.N];
-                        group_3D_vid[n + k * nSx_r + c * kWien_2 * nSx_r] =
-                            table_2D_vid[k + n * kWien_2 + c * kWien_2 * prms.N];
+                        group_3D_est[n + k * nSx_r + c * kW2 * nSx_r] =
+                            table_2D_est[k + n * kW2 + c * kW2 * prms.Nmax];
+                        group_3D_vid[n + k * nSx_r + c * kW2 * nSx_r] =
+                            table_2D_vid[k + n * kW2 + c * kW2 * prms.Nmax];
                     }
                 }
 
@@ -455,8 +455,8 @@ void vbm3d_2nd_step(
             //! Save the 3D group. The DCT 2D inverse will be done after.
             for (unsigned c = 0; c < d; c++)
                 for (unsigned n = 0; n < nSx_r; n++)
-                    for (unsigned k = 0; k < kWien_2; k++)
-                        group_3D_table.push_back(group_3D_est[n + k * nSx_r + c * kWien_2 * nSx_r]);
+                    for (unsigned k = 0; k < kW2; k++)
+                        group_3D_table.push_back(group_3D_est[n + k * nSx_r + c * kW2 * nSx_r]);
 
             //! Save weighting
             for (unsigned c = 0; c < d; c++)
@@ -466,7 +466,7 @@ void vbm3d_2nd_step(
 
         //!  Apply 2D dct inverse
         if (prms.T_2D == DCT)
-            dct_2d_inv(group_3D_table, prms.k, prms.N * d * column_ind.size(),
+            dct_2d_inv(group_3D_table, prms.k, prms.Nmax * d * column_ind.size(),
                     coef_norm_inv, plan_2d_inv);
         else if (prms.T_2D == BIOR)
             bior_2d_inv(group_3D_table, prms.k, lpr, hpr);
@@ -486,13 +486,13 @@ void vbm3d_2nd_step(
                             for (unsigned q = 0; q < prms.k; q++)
                             {
                                 final_estimate[patch_table[ind_j][n].second + d*(p*w + q)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d]
-                                    * group_3D_table[p * prms.k + q + n * kWien_2 + c * kWien_2 * nSx_r + dec];
+                                    * group_3D_table[p * prms.k + q + n * kW2 + c * kW2 * nSx_r + dec];
                                 denominator[patch_table[ind_j][n].second + d*(p*w + q)] += kaiser_window[p * prms.k + q] * wx_r_table[c + ind_j * d];
                             }
                     }
                 }
             }
-            dec += nSx_r * d * kWien_2;
+            dec += nSx_r * d * kW2;
         }
 	}
 }
@@ -543,7 +543,7 @@ inline float patchDistance(
  * @param rpidx : reference patch;
  * @param s: size of the search region;
  * @param k: size of the pathes;
- * @param Nb: number of patches to keep at the end;
+ * @param Nl: number of patches to keep at the end;
  * @param d: bias for patches at the same spatial position than the reference;
  * @param frames: vector of frames;
  * @param w, h, d: width, height and number of channels of the frames;
@@ -557,7 +557,7 @@ inline void localSearch(
 , 	unsigned rpidx
 , 	unsigned s
 , 	int k
-, 	unsigned Nb
+, 	unsigned Nl
 ,	float d
 , 	vector<float*>& frames
 ,   const int w
@@ -609,7 +609,7 @@ inline void localSearch(
 				distance.push_back((rp == (qx + qy*w)) ? std::make_pair(patchDistance(rpidx, currentPatch, frames, w, c, size_buffer, sPx) - d, currentPatch):std::make_pair(patchDistance(rpidx, currentPatch, frames, w, c, size_buffer, sPx), currentPatch));
 		}
 
-	int nbCandidates = std::min(Nb, (unsigned)distance.size());
+	int nbCandidates = std::min(Nl, (unsigned)distance.size());
 	std::partial_sort(distance.begin(), distance.begin() + nbCandidates,
 			distance.end(), comparaisonFirst);
 	for(unsigned ix = 0; ix < nbCandidates; ++ix)
@@ -640,34 +640,34 @@ int computeSimilarPatches(
 ,   const int size_buffer
 ,	const Parameters& prms
 ){
-	std::vector<unsigned> tempMatchesPre(prms.Nb);
+	std::vector<unsigned> tempMatchesPre(prms.Nl);
 	std::vector<std::pair<float, unsigned> > bestPatches;
-	bestPatches.reserve(prms.Nb*(prms.Nf+1));
+	bestPatches.reserve(prms.Nl*(prms.Rf+1));
 	std::vector<std::pair<float, unsigned> > frameBestPatches;
-	frameBestPatches.reserve(prms.Nb*prms.Nb);
+	frameBestPatches.reserve(prms.Nl*prms.Nl);
 	std::unordered_map<unsigned, int> alreadySeen;
 
     int ridx = pidx * size_buffer + idx_curr_frame;
 
 	//! Search in the current frame
-	localSearch(ridx, ridx, prms.Ns, prms.k, prms.Nb, prms.d, frames, w, h, c, size_buffer, alreadySeen, bestPatches);
-	for(unsigned ix = 0; ix < prms.Nb; ++ix)
+	localSearch(ridx, ridx, prms.Rr, prms.k, prms.Nl, prms.d, frames, w, h, c, size_buffer, alreadySeen, bestPatches);
+	for(unsigned ix = 0; ix < prms.Nl; ++ix)
 		tempMatchesPre[ix] = bestPatches[ix].second;
 
 	//! Search in the previous frames (centered on the matches)
-	int finalFrame = (idx_curr_frame - min(size_buffer, (int) prms.Nf) + 1 + size_buffer) % size_buffer;
+	int finalFrame = (idx_curr_frame - min(size_buffer, (int) prms.Rf) + 1 + size_buffer) % size_buffer;
     int nextFrame = (idx_curr_frame + size_buffer - 1) % size_buffer;
     bool over = (finalFrame == idx_curr_frame) ? true : false;
     while(!over)
 	{
 		frameBestPatches.clear();
-		for(unsigned currentTempMatch = 0; currentTempMatch < prms.Nb; ++currentTempMatch)
+		for(unsigned currentTempMatch = 0; currentTempMatch < prms.Nl; ++currentTempMatch)
 		{
             unsigned currentMatch = (tempMatchesPre[currentTempMatch] / size_buffer) * size_buffer + nextFrame;
-            localSearch(currentMatch, ridx, prms.Npr, prms.k, prms.Nb, prms.d, frames, w, h, c, size_buffer, alreadySeen, frameBestPatches);
+            localSearch(currentMatch, ridx, prms.Rp, prms.k, prms.Nl, prms.d, frames, w, h, c, size_buffer, alreadySeen, frameBestPatches);
 		}
 
-		int nbCandidates = std::min(prms.Nb, (unsigned)frameBestPatches.size());
+		int nbCandidates = std::min(prms.Nl, (unsigned)frameBestPatches.size());
 		std::partial_sort(frameBestPatches.begin(), frameBestPatches.begin() + nbCandidates,
 				frameBestPatches.end(), comparaisonFirst);
 		for(unsigned ix = 0; ix < nbCandidates; ++ix)
@@ -681,7 +681,7 @@ int computeSimilarPatches(
             nextFrame = (nextFrame + size_buffer - 1) % size_buffer;
 	}
 
-	const unsigned nSimP = std::min(prms.N, (unsigned)bestPatches.size());
+	const unsigned nSimP = std::min(prms.Nmax, (unsigned)bestPatches.size());
 
 	std::partial_sort(bestPatches.begin(), bestPatches.begin() + nSimP,
 			bestPatches.end(), comparaisonFirst);

@@ -44,51 +44,51 @@ using namespace std;
 void initConstantParams_1(
 	Parameters& prms
 ,	const int k
-,	const int Nf
-,	const int Ns
-,	const int Npr
-,	const int Nb
-,	const int p
-,	const int N
+,	const int Rf
+,	const int Rr
+,	const int Rp
+,	const int Nl
+,	const int st
+,	const int Nmax
 ,	const int d
-,	const float lambda3D
+,	const float lambda
 ,	const unsigned T_2D
 ,	const unsigned T_3D
 ){
 	const float n = 1./255./255.;
-	prms.k   = (k   < 0) ? 8 : k;
-	prms.Nf  = (Nf  < 0) ? 4 : Nf;
-	prms.Ns  = (Ns  < 0) ? 7 : Ns;
-	prms.Npr = (Npr < 0) ? 5 : Npr;
-	prms.Nb  = (Nb  < 0) ? 2 : Nb;
-	prms.d   = (d   < 0) ? 7.*7.*n : d*d*n;
-	prms.p   = (p   < 0) ? 6 : p;
-	prms.N   = (N   < 0) ? 8 : N;
-	prms.lambda3D = (lambda3D < 0) ? 2.7f : lambda3D;
+	prms.k    = (k    < 0) ? 8 : k;
+	prms.Rf   = (Rf   < 0) ? 4 : Rf;
+	prms.Rr   = (Rr   < 0) ? 7 : Rr;
+	prms.Rp   = (Rp   < 0) ? 5 : Rp;
+	prms.Nl   = (Nl   < 0) ? 2 : Nl;
+	prms.d    = (d    < 0) ? 7.*7.*n : d*d*n;
+	prms.st   = (st   < 0) ? 6 : st;
+	prms.Nmax = (Nmax < 0) ? 8 : Nmax;
+	prms.lambda = (lambda < 0) ? 2.7f : lambda;
 	prms.T_2D = (T_2D == NONE) ? BIOR : T_2D;
 	prms.T_3D = (T_3D == NONE) ? HAAR : T_3D;
 }
 
 void initConstantParams_2(
 	Parameters& prms
-,	const int Nf
-,	const int Ns
-,	const int Npr
-,	const int Nb
-,	const int p
-,	const int N
+,	const int Rf
+,	const int Rr
+,	const int Rp
+,	const int Nl
+,	const int st
+,	const int Nmax
 ,	const int d
 ,	const unsigned T_2D
 ,	const unsigned T_3D
 ){
 	const float n = 1./255./255.;
-	prms.Nf  = (Nf  < 0) ? 4 : Nf;
-	prms.Ns  = (Ns  < 0) ? 7 : Ns;
-	prms.Npr = (Npr < 0) ? 5 : Npr;
-	prms.Nb  = (Nb  < 0) ? 2 : Nb;
-	prms.d   = (d   < 0) ? 3.*3.*n : d*d*n;
-	prms.p   = (p   < 0) ? 4 : p;
-	prms.N   = (N   < 0) ? 8 : N;
+	prms.Rf   = (Rf   < 0) ? 4 : Rf;
+	prms.Rr   = (Rr   < 0) ? 7 : Rr;
+	prms.Rp   = (Rp   < 0) ? 5 : Rp;
+	prms.Nl   = (Nl   < 0) ? 2 : Nl;
+	prms.d    = (d    < 0) ? 3.*3.*n : d*d*n;
+	prms.st   = (st   < 0) ? 4 : st;
+	prms.Nmax = (Nmax < 0) ? 8 : Nmax;
 	prms.T_2D = (T_2D == NONE) ? DCT  : T_2D;
 	prms.T_3D = (T_3D == NONE) ? HAAR : T_3D;
 }
@@ -134,62 +134,55 @@ int main(int argc, char **argv)
 	const string  sigma_path = clo_option("-s", "", "< noise sigma pipe");
 
 	//! VBM3D parameters
-	const int   kHard    = clo_option("-kH"   , -1 , "< patch size");
-	const int   NfHard   = clo_option("-NfH"  , -1 , "< number of previous frames");
-	const int   NsHard   = clo_option("-NsH"  , -1 , "< size of region if current frame");
-	const int   NprHard  = clo_option("-NprH" , -1 , "< size of local search regions in previous frames");
-	const int   NbHard   = clo_option("-NbH"  , -1 , "< number of candidates per local search region");
-	const int   pHard    = clo_option("-pH"   , -1 , "< step to skip patches");
-	const int   NHard    = clo_option("-NH"   , -1 , "< maximum number of similar patches");
-	const int   dHard    = clo_option("-dH"   , -1 , "< d offset in distance");
-	const float tauHard  = clo_option("-tauH" , -1., "< distance threshold");
-	const float lambda3D = clo_option("-lambda",-1., "< parameter for the thresholding operator");
-	const int   kWien    = clo_option("-kW"   , -1 , "< patch size");
-	const int   NfWien   = clo_option("-NfW"  , -1 , "< number of previous frames");
-	const int   NsWien   = clo_option("-NsW"  , -1 , "< size of region if current frame");
-	const int   NprWien  = clo_option("-NprW" , -1 , "< size of local search regions in previous frames");
-	const int   NbWien   = clo_option("-NbW"  , -1 , "< number of candidates per local search region");
-	const int   pWien    = clo_option("-pW"   , -1 , "< step to skip patches");
-	const int   NWien    = clo_option("-NW"   , -1 , "< maximum number of similar patches");
-	const int   dWien    = clo_option("-dW"   , -1 , "< d offset in distance");
-	const float tauWien  = clo_option("-tauW" , -1., "< distance threshold");
+	const int   Rf      = clo_option("-Rf"     ,-1 , "< number of previous frames");
+	const int   Rr      = clo_option("-Rr"     ,-1 , "< size of searach region in current frame");
+	const int   Rp      = clo_option("-Rp"     ,-1 , "< size of local search regions in previous frames");
+	const int   Nl      = clo_option("-Nl"     ,-1 , "< number of candidates per local search region");
+	const int   kH      = clo_option("-kH"     ,-1 , "< patch size");
+	const int   kW      = clo_option("-kW"     ,-1 , "< patch size");
+	const int   stH     = clo_option("-stH"    ,-1 , "< step to skip patches");
+	const int   stW     = clo_option("-stW"    ,-1 , "< step to skip patches");
+	const int   NmaxH   = clo_option("-NmaxH"  ,-1 , "< maximum number of similar patches");
+	const int   NmaxW   = clo_option("-NmaxW"  ,-1 , "< maximum number of similar patches");
+	const int   dH      = clo_option("-dH"     ,-1 , "< d offset in distance");
+	const int   dW      = clo_option("-dW"     ,-1 , "< d offset in distance");
+	const float tauH    = clo_option("-tauH"   ,-1., "< distance threshold");
+	const float tauW    = clo_option("-tauW"   ,-1., "< distance threshold");
+	const float lambdaH = clo_option("-lambdaH",-1., "< parameter for the thresholding operator");
 	const unsigned color_space  =  (unsigned) clo_option("-color", 0 , "< color space");
-	const unsigned T_2D_hard  = (unsigned) clo_option("-T2dh", NONE , "< Spatial transform for hard thresholding step");
-	const unsigned T_2D_wien  = (unsigned) clo_option("-T2dw", NONE , "< Spatial transform for Wiener filtering step");
-	const unsigned T_3D_hard  = (unsigned) clo_option("-T3dh", NONE , "< 3rd dimension transform for hard thresholding step");
-	const unsigned T_3D_wien  = (unsigned) clo_option("-T3dw", NONE , "< 3rd dimension transform for Wiener filtering step");
+	const unsigned T2DH  = (unsigned) clo_option("-T2DH", NONE , "< Spatial transform for hard thresholding step");
+	const unsigned T2DW  = (unsigned) clo_option("-T2DW", NONE , "< Spatial transform for Wiener filtering step");
+	const unsigned T3DH  = (unsigned) clo_option("-T3DH", NONE , "< 3rd dimension transform for hard thresholding step");
+	const unsigned T3DW  = (unsigned) clo_option("-T3DW", NONE , "< 3rd dimension transform for Wiener filtering step");
 
 	//! Check inputs
 	if (input_path == "")
 		return fprintf(stderr, "%s: no input images.\nTry `%s --help' for more information.\n",
 				argv[0], argv[0]), 1;
 
-	if (T_2D_hard != NONE && T_2D_hard != DCT && T_2D_hard != BIOR)
+	if (T2DH != NONE && T2DH != DCT && T2DH != BIOR)
 		return fprintf(stderr, "Unknown T2D_H: %d for DCT %d for bi-orthogonal\n", DCT, BIOR), 1;
 
-	if (T_2D_wien != NONE && T_2D_wien != DCT && T_2D_wien != BIOR)
+	if (T2DW != NONE && T2DW != DCT && T2DW != BIOR)
 		return fprintf(stderr, "Unknown T2D_W: %d for DCT %d for bi-orthogonal\n", DCT, BIOR), 1;
 
-	if (T_3D_hard != NONE && T_3D_hard != HAAR && T_3D_hard != HADAMARD)
+	if (T3DH != NONE && T3DH != HAAR && T3DH != HADAMARD)
 		return fprintf(stderr, "Unknown T3D_H: %d for HAAR %d for HADAMARD\n", HAAR, HADAMARD), 1;
 
-	if (T_3D_wien != NONE && T_3D_wien != HAAR && T_3D_wien != HADAMARD)
+	if (T3DW != NONE && T3DW != HAAR && T3DW != HADAMARD)
 		return fprintf(stderr, "Unknown T3D_W: %d for HAAR %d for HADAMARD\n", HAAR, HADAMARD), 1;
 
 	//! Initialize parameters independent of the noise level
 	Parameters prms_1;
 	Parameters prms_2;
-	initConstantParams_1(prms_1, kHard, NfHard, NsHard, NprHard, NbHard, pHard, NHard, dHard, lambda3D, T_2D_hard, T_3D_hard);
-	initConstantParams_2(prms_2,        NfWien, NsWien, NprWien, NbWien, pWien, NWien, dWien,           T_2D_wien, T_3D_wien);
-
-	// Force both buffer to have the same size for now
-	prms_2.Nf = prms_1.Nf;
+	initConstantParams_1(prms_1, kH, Rf, Rr, Rp, Nl, stH, NmaxH, dH, lambdaH, T2DH, T3DH);
+	initConstantParams_2(prms_2,     Rf, Rf, Rp, Nl, stW, NmaxW, dW,          T2DW, T3DW);
 
 	//! Init Kaiser Window for first step (since it doesn't depend on sigma)
-	int kHard_2 = prms_1.k*prms_1.k;
-	vector<float> kaiser_window_1(kHard_2);
-	vector<float> coef_norm_1(kHard_2);
-	vector<float> coef_norm_inv_1(kHard_2);
+	int kH2 = prms_1.k*prms_1.k;
+	vector<float> kaiser_window_1(kH2);
+	vector<float> coef_norm_1(kH2);
+	vector<float> coef_norm_inv_1(kH2);
 	kaiserWindow(kaiser_window_1, coef_norm_1, coef_norm_inv_1, prms_1.k);
 
 	//! Preprocessing of Bior table
@@ -216,9 +209,9 @@ int main(int argc, char **argv)
 		return fprintf(stderr, "vbm3d: invalid sigma stream size: %dx%dx%d\n", sw, sh, sd), 1;
 
 	//! Initialize the buffers to store the previous frames
-	vector<float*> buffer_input(prms_1.Nf, NULL);
-	vector<float*> buffer_basic(prms_2.Nf, NULL);
-	for(int i = 0; i < prms_1.Nf; ++i)
+	vector<float*> buffer_input(prms_1.Rf, NULL);
+	vector<float*> buffer_basic(prms_2.Rf, NULL);
+	for(int i = 0; i < prms_1.Rf; ++i)
 	{
 		buffer_input[i] = (float*) malloc(w*h*d*sizeof(*(buffer_input[i])));
 		buffer_basic[i] = (float*) malloc(w*h*d*sizeof(*(buffer_basic[i])));
@@ -233,7 +226,7 @@ int main(int argc, char **argv)
 	while (vpp_read_frame(in, buffer_input[index], w, h, d))
 	{
 		// Update buffer size
-		size_buffer = std::min(size_buffer+1, (int)prms_1.Nf);
+		size_buffer = std::min(size_buffer+1, (int)prms_1.Rf);
 
 		// Read noise level
 		float sigmadata[2];
@@ -241,14 +234,14 @@ int main(int argc, char **argv)
 		sigma = sigmadata[1];
 
 		//! Initialize parameters independent of the noise level
-		initSigmaParams_1(prms_1,        tauHard, sigma);
-		initSigmaParams_2(prms_2, kWien, tauWien, sigma);
+		initSigmaParams_1(prms_1,     tauH, sigma);
+		initSigmaParams_2(prms_2, kW, tauW, sigma);
 
 		//! Init Kaiser Window for second step
-		int kWien_2 = prms_2.k*prms_2.k;
-		vector<float> kaiser_window_2(kWien_2);
-		vector<float> coef_norm_2(kWien_2);
-		vector<float> coef_norm_inv_2(kWien_2);
+		int kW2 = prms_2.k*prms_2.k;
+		vector<float> kaiser_window_2(kW2);
+		vector<float> coef_norm_2(kW2);
+		vector<float> coef_norm_inv_2(kW2);
 		kaiserWindow(kaiser_window_2, coef_norm_2, coef_norm_inv_2, prms_2.k);
 
 		// Change colorspace (RGB to OPP)
@@ -268,10 +261,10 @@ int main(int argc, char **argv)
 		if (!vpp_write_frame(out, final_estimate, w, h, d))
 			break;
 
-		index = (index+1) % prms_1.Nf;
+		index = (index+1) % prms_1.Rf;
 	}
 
-	for(int i = 0; i < prms_1.Nf; ++i)
+	for(int i = 0; i < prms_1.Rf; ++i)
 	{
 		free(buffer_input[i]);
 		free(buffer_basic[i]);

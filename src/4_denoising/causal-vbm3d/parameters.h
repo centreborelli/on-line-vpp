@@ -12,24 +12,24 @@ struct Parameters
 	unsigned T_2D;
 	/// Type of the 1D tranform 
 	unsigned T_3D;
-	/// Number of similar patches
-	unsigned N;
+	/// Maximum number of similar patches
+	unsigned Nmax;
 	/// Number of frames forward (and backward) used during the search
-	unsigned Nf;
+	unsigned Rf;
 	/// Size of the search region in the reference frame
-	unsigned Ns;
+	unsigned Rr;
 	/// Size of the search region in the other frame
-	unsigned Npr;
-	/// Maximum number of matches kept for a frame
-	unsigned Nb;
+	unsigned Rp;
+	/// Maximum number of matches kept for a local search region
+	unsigned Nl;
 	/// Size of the patch (spatial)
 	unsigned k;
 	/// Step
-	unsigned p;
+	unsigned st;
 	/// Correcting parameter in the distance computation
 	float d;
 	/// Threshold if it's a hard thresholding step
-	float lambda3D;
+	float lambda;
 	/// Distance threshold
 	float tau;
 

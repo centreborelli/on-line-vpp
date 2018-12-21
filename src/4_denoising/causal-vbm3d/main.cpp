@@ -110,34 +110,33 @@ int main(int argc, char **argv)
     //! Check if there is the right call for the algorithm
 
 	using std::string;
-	const string  input_path = clo_option("-i"    , ""              , "< input sequence");
-	const string  final_path = clo_option("-deno" , "deno_%03d.tiff" , "> denoised sequence");
-	const string  sigma_path = clo_option("-sigma_path", "", "standard deviation sigma path");
+	const string  input_path = clo_option("-i", "-", "< input pipe");
+	const string  final_path = clo_option("-o", "-", "> output pipe");
+	const string  sigma_path = clo_option("-sigma_path", "", "< noise sigma pipe");
 
 	//! General parameters
-	const float fSigma = clo_option("-sigma", 0.f, "Standard deviation sigma to initialize parameters");
+	const float fSigma = clo_option("-sigma", 0.f, "< noise sigma to initialize parameters");
 
 	//! VBM3D parameters
-	const int kHard = clo_option("-kHard", -1 , "< ");
-	const int NfHard = clo_option("-NfHard", -1 , "< ");
-	const int NsHard = clo_option("-NsHard", -1 , "< ");
-	const int NprHard = clo_option("-NprHard", -1 , "< ");
-	const int NbHard = clo_option("-NbHard", -1 , "< ");
-	const int pHard = clo_option("-pHard", -1 , "< ");
-	const int NHard = clo_option("-NHard", -1 , "< ");
-	const int dHard = clo_option("-dHard", -1 , "< ");
-	const float tauHard = clo_option("-tauHard", -1. , "< ");
-	const int kWien = clo_option("-kWien", -1 , "< ");
-	const int NfWien = clo_option("-NfWien", -1 , "< ");
-	const int NsWien = clo_option("-NsWien", -1 , "< ");
-	const int NprWien = clo_option("-NprWien", -1 , "< ");
-	const int NbWien = clo_option("-NbWien", -1 , "< ");
-	const int pWien = clo_option("-pWien", -1 , "< ");
-	const int NWien = clo_option("-NWien", -1 , "< ");
-	const int dWien = clo_option("-dWien", -1 , "< ");
-	const float tauWien = clo_option("-tauWien", -1. , "< ");
-
-	const float lambda3D = clo_option("-lambda3d", -1. , "< ");
+	const int   kHard    = clo_option("-kH"   , -1 , "< patch size");
+	const int   NfHard   = clo_option("-NfH"  , -1 , "< number of previous frames");
+	const int   NsHard   = clo_option("-NsH"  , -1 , "< size of region if current frame");
+	const int   NprHard  = clo_option("-NprH" , -1 , "< size of local search regions in previous frames");
+	const int   NbHard   = clo_option("-NbH"  , -1 , "< number of candidates per local search region");
+	const int   pHard    = clo_option("-pH"   , -1 , "< step to skip patches");
+	const int   NHard    = clo_option("-NH"   , -1 , "< maximum number of similar patches");
+	const int   dHard    = clo_option("-dH"   , -1 , "< d offset in distance");
+	const float tauHard  = clo_option("-tauH" , -1., "< distance threshold");
+	const float lambda3D = clo_option("-lambda",-1., "< parameter for the thresholding operator");
+	const int   kWien    = clo_option("-kW"   , -1 , "< patch size");
+	const int   NfWien   = clo_option("-NfW"  , -1 , "< number of previous frames");
+	const int   NsWien   = clo_option("-NsW"  , -1 , "< size of region if current frame");
+	const int   NprWien  = clo_option("-NprW" , -1 , "< size of local search regions in previous frames");
+	const int   NbWien   = clo_option("-NbW"  , -1 , "< number of candidates per local search region");
+	const int   pWien    = clo_option("-pW"   , -1 , "< step to skip patches");
+	const int   NWien    = clo_option("-NW"   , -1 , "< maximum number of similar patches");
+	const int   dWien    = clo_option("-dW"   , -1 , "< d offset in distance");
+	const float tauWien  = clo_option("-tauW" , -1., "< distance threshold");
 	const unsigned color_space  =  (unsigned) clo_option("-color", 0 , "< color space");
 
 	//! Check inputs

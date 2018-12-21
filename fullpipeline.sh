@@ -31,7 +31,6 @@ function getfifo() {
 pono=$(getfifo pono)
 sigmas=$(getfifo sigmas)
 mask=$(getfifo mask)
-beforemask=$(getfifo beforemask)
 
 # setup output files
 if [ "$OUTPUT_INTERMEDIATE" -eq 1 ]; then
@@ -70,9 +69,10 @@ function unband() {
 }
 
 function stabilize() {
+	beforemask=$(getfifo beforemask)
 	bin/estadeo $1 -o - \
 	| bin/vp dup - - $beforemask \
-	| bin/vlambda -o $mask 'x 0 >' \
+	| bin/vlambda - -o $mask 'x 0 >' \
 	| cat $beforemask \
 	| tee $outstab
 }

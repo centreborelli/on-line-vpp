@@ -190,24 +190,24 @@ int main(int argc, char **argv)
 	initializeParameters_1(prms_1, kHard, NfHard, NsHard, NprHard, NbHard, pHard, NHard, dHard, tauHard, lambda3D, T_2D_hard, T_3D_hard, fSigma);
 	initializeParameters_2(prms_2, kWien, NfWien, NsWien, NprWien, NbWien, pWien, NWien, dWien, tauWien, T_2D_wien, T_3D_wien, fSigma);
 
-    if(prms_1.k <= 0)
-    {
-        cout << "Invalid patch size for the first step" << endl;
-        return EXIT_FAILURE;
-    }
+	if(prms_1.k <= 0)
+	{
+		cout << "Invalid patch size for the first step" << endl;
+		return EXIT_FAILURE;
+	}
 
-    // Force both buffer to have the same size for now
-    prms_2.Nf = prms_1.Nf;
+	// Force both buffer to have the same size for now
+	prms_2.Nf = prms_1.Nf;
 
 
 	//! Preprocessing (KaiserWindow, Threshold, DCT normalization, ...)
-    int kHard_2 = prms_1.k*prms_1.k;
+	int kHard_2 = prms_1.k*prms_1.k;
 	vector<float> kaiser_window_1(kHard_2);
 	vector<float> coef_norm_1(kHard_2);
 	vector<float> coef_norm_inv_1(kHard_2);
 	preProcess(kaiser_window_1, coef_norm_1, coef_norm_inv_1, prms_1.k);
 
-    int kWien_2 = prms_2.k*prms_2.k;
+	int kWien_2 = prms_2.k*prms_2.k;
 	vector<float> kaiser_window_2(kWien_2);
 	vector<float> coef_norm_2(kWien_2);
 	vector<float> coef_norm_inv_2(kWien_2);
@@ -218,13 +218,13 @@ int main(int argc, char **argv)
 	bior15_coef(lpd, hpd, lpr, hpr);
 
 	//! Declarations
-    int w,h,d;
-    FILE* in = vpp_init_input(input_path.c_str(), &w, &h, &d);
-    if (!in)
-        return fprintf(stderr, "vbm3d: cannot initialize input '%s'\n", input_path.c_str()), 1;
-    FILE* out = vpp_init_output(final_path.c_str(), w, h, d);
-    if (!out)
-        return fprintf(stderr, "vbm3d: cannot initialize output '%s'\n", final_path.c_str()), 1;
+	int w,h,d;
+	FILE* in = vpp_init_input(input_path.c_str(), &w, &h, &d);
+	if (!in)
+		return fprintf(stderr, "vbm3d: cannot initialize input '%s'\n", input_path.c_str()), 1;
+	FILE* out = vpp_init_output(final_path.c_str(), w, h, d);
+	if (!out)
+		return fprintf(stderr, "vbm3d: cannot initialize output '%s'\n", final_path.c_str()), 1;
 	int s1, s2, s3;
 	FILE* sigma_in = vpp_init_input(sigma_path.c_str(), &s1, &s2, &s3);
 	float sigma;
@@ -233,59 +233,62 @@ int main(int argc, char **argv)
 		fprintf(stderr, "vbm3d: cannot initialize sigma '%s'\n", sigma_path.c_str());
 		return EXIT_FAILURE;
 	}
-	if (s1 != 1 || s2 != 1 || s3 != 1)
+	if (s1 != 2 || s2 != 1 || s3 != 1)
 	{
-		fprintf(stderr, "vbm3d: invalid sigma stream dimensions: %dx%dx%dx\n",
+		fprintf(stderr, "vbm3d: invalid sigma stream dimensions: %dx%dx%d\n",
 				s1, s2, s3);
 		return EXIT_FAILURE;
-    }
-    
-    vector<float*> buffer_input(prms_1.Nf, NULL);
-    vector<float*> buffer_basic(prms_2.Nf, NULL);
-    float* final_estimate;
+	}
 
-    //! Initialize the buffers
-    for(int i = 0; i < prms_1.Nf; ++i)
-    {
-        buffer_input[i] = (float*) malloc(w*h*d*sizeof(*(buffer_input[i])));
-        buffer_basic[i] = (float*) malloc(w*h*d*sizeof(*(buffer_basic[i])));
-    }
-    final_estimate = (float*) malloc(w*h*d*sizeof*final_estimate);
+	vector<float*> buffer_input(prms_1.Nf, NULL);
+	vector<float*> buffer_basic(prms_2.Nf, NULL);
+	float* final_estimate;
 
-    //! Process the frames
-    int size_buffer = 0;
-    int index = 0;
-    while (vpp_read_frame(in, buffer_input[index], w, h, d)) {
-        vpp_read_frame(sigma_in, &sigma, s1, s2, s3);
-        size_buffer = std::min(size_buffer+1, (int)prms_1.Nf);
+	//! Initialize the buffers
+	for(int i = 0; i < prms_1.Nf; ++i)
+	{
+		buffer_input[i] = (float*) malloc(w*h*d*sizeof(*(buffer_input[i])));
+		buffer_basic[i] = (float*) malloc(w*h*d*sizeof(*(buffer_basic[i])));
+	}
+	final_estimate = (float*) malloc(w*h*d*sizeof*final_estimate);
 
-        // Change colorspace (RGB to OPP)
-        if(color_space == 0)
-            transformColorSpace(buffer_input[index], w, h, d, true);
+	//! Process the frames
+	int size_buffer = 0;
+	int index = 0;
+	while (vpp_read_frame(in, buffer_input[index], w, h, d)) {
 
-        if (run_vbm3d(sigma, buffer_input, buffer_basic, final_estimate, w, h, d, prms_1, prms_2, index, size_buffer, kaiser_window_1, coef_norm_1, coef_norm_inv_1, kaiser_window_2, coef_norm_2, coef_norm_inv_2, lpd, hpd, lpr, hpr)
-                != EXIT_SUCCESS)
-            return EXIT_FAILURE;
+		float sigmadata[2];
+		vpp_read_frame(sigma_in, sigmadata, s1, s2, s3);
+		sigma = sigmadata[1];
+		size_buffer = std::min(size_buffer+1, (int)prms_1.Nf);
 
-        // Inverse the colorspace for the output (OPP to RGB)
-        if(color_space == 0)
-            transformColorSpace(final_estimate, w, h, d, false);
+		// Change colorspace (RGB to OPP)
+		if(color_space == 0)
+			transformColorSpace(buffer_input[index], w, h, d, true);
 
-        // send the frame to the next step
-        if (!vpp_write_frame(out, final_estimate, w, h, d))
-            break;
+		if (run_vbm3d(sigma, buffer_input, buffer_basic, final_estimate, w, h, d, prms_1, prms_2, index, size_buffer, kaiser_window_1, coef_norm_1, coef_norm_inv_1, kaiser_window_2, coef_norm_2, coef_norm_inv_2, lpd, hpd, lpr, hpr)
+				!= EXIT_SUCCESS)
+			return EXIT_FAILURE;
 
-        index = (index+1) % prms_1.Nf;
-    }
+		// Inverse the colorspace for the output (OPP to RGB)
+		if(color_space == 0)
+			transformColorSpace(final_estimate, w, h, d, false);
 
-    for(int i = 0; i < prms_1.Nf; ++i)
-    {
-        free(buffer_input[i]);
-        free(buffer_basic[i]);
-    }
-    free(final_estimate);
-    fclose(in);
-    fclose(out);
+		// send the frame to the next step
+		if (!vpp_write_frame(out, final_estimate, w, h, d))
+			break;
+
+		index = (index+1) % prms_1.Nf;
+	}
+
+	for(int i = 0; i < prms_1.Nf; ++i)
+	{
+		free(buffer_input[i]);
+		free(buffer_basic[i]);
+	}
+	free(final_estimate);
+	fclose(in);
+	fclose(out);
 
 	return EXIT_SUCCESS;
 }

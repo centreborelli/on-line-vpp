@@ -129,9 +129,9 @@ int main(int argc, char **argv)
 {
 	clo_usage("Causal version of the VBM3D video denoising method");
 	clo_help(" NOTE: Input (<) and output (>) sequences have to be vpp pipes.\n"
-			   "       A default value of -1 means that the default value will \n"
-				"       be assigned automatically as a function of sigma. Default\n"
-				"       values are tuned for standard videos in the [0,255] range.\n");
+	         "       A default value of -1 means that the default value will \n"
+	         "       be assigned automatically as a function of sigma. Default\n"
+	         "       values are tuned for standard videos in the [0,255] range.\n");
 
 	using std::string;
 	const string  input_path = clo_option("-i", "-", "< input pipe");

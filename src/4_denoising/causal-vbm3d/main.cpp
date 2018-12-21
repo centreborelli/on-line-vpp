@@ -37,7 +37,11 @@
 
 using namespace std;
 
-void initializeParameters_1(
+/**
+ * @brief Initialize parameters whose default value is constant.
+ *
+ **/
+void initConstantParams_1(
 	Parameters& prms
 ,	const int k
 ,	const int Nf
@@ -47,11 +51,9 @@ void initializeParameters_1(
 ,	const int p
 ,	const int N
 ,	const int d
-,	const float tau
 ,	const float lambda3D
 ,	const unsigned T_2D
 ,	const unsigned T_3D
-,	const float sigma
 ){
 	const float n = 1./255./255.;
 	prms.k   = (k   < 0) ? 8 : k;
@@ -65,12 +67,10 @@ void initializeParameters_1(
 	prms.lambda3D = (lambda3D < 0) ? 2.7f : lambda3D;
 	prms.T_2D = (T_2D == NONE) ? BIOR : T_2D;
 	prms.T_3D = (T_3D == NONE) ? HAAR : T_3D;
-	prms.tau = (tau < 0) ? ( (sigma > 30) ? 4500 : 3000 )*n : tau;
 }
 
-void initializeParameters_2(
+void initConstantParams_2(
 	Parameters& prms
-,	const int k
 ,	const int Nf
 ,	const int Ns
 ,	const int Npr
@@ -78,13 +78,10 @@ void initializeParameters_2(
 ,	const int p
 ,	const int N
 ,	const int d
-,	const float tau
 ,	const unsigned T_2D
 ,	const unsigned T_3D
-,	const float sigma
 ){
 	const float n = 1./255./255.;
-	prms.k   = (k   < 0) ? ( (sigma > 30) ? 8 : 7 ) : k;
 	prms.Nf  = (Nf  < 0) ? 4 : Nf;
 	prms.Ns  = (Ns  < 0) ? 7 : Ns;
 	prms.Npr = (Npr < 0) ? 5 : Npr;
@@ -94,6 +91,29 @@ void initializeParameters_2(
 	prms.N   = (N   < 0) ? 8 : N;
 	prms.T_2D = (T_2D == NONE) ? DCT  : T_2D;
 	prms.T_3D = (T_3D == NONE) ? HAAR : T_3D;
+}
+
+/**
+ * @brief Initialize parameters whose default value vary with sigma
+ *
+ **/
+void initSigmaParams_1(
+	Parameters& prms
+,	const float tau
+,	const float sigma
+){
+	const float n = 1./255./255.;
+	prms.tau = (tau < 0) ? ( (sigma > 30) ? 4500 : 3000 )*n : tau;
+}
+
+void initSigmaParams_2(
+	Parameters& prms
+,	const int k
+,	const float tau
+,	const float sigma
+){
+	const float n = 1./255./255.;
+	prms.k   = (k   < 0) ? ( (sigma > 30) ? 8 : 7 ) : k;
 	prms.tau = (tau < 0) ? ( (sigma > 30) ? 3000 : 1500 )*n : tau;
 }
 
@@ -103,8 +123,6 @@ void initializeParameters_2(
  * @brief  Main executable file. Do not use lib_fftw to
  *         process DCT.
  */
-
-
 int main(int argc, char **argv)
 {
 	clo_usage("Causal version of the VBM3D video denoising method");
@@ -113,10 +131,7 @@ int main(int argc, char **argv)
 	using std::string;
 	const string  input_path = clo_option("-i", "-", "< input pipe");
 	const string  final_path = clo_option("-o", "-", "> output pipe");
-	const string  sigma_path = clo_option("-sigma_path", "", "< noise sigma pipe");
-
-	//! General parameters
-	const float fSigma = clo_option("-sigma", 0.f, "< noise sigma to initialize parameters");
+	const string  sigma_path = clo_option("-s", "", "< noise sigma pipe");
 
 	//! VBM3D parameters
 	const int   kHard    = clo_option("-kH"   , -1 , "< patch size");
@@ -161,27 +176,21 @@ int main(int argc, char **argv)
 	if (T_3D_wien != NONE && T_3D_wien != HAAR && T_3D_wien != HADAMARD)
 		return fprintf(stderr, "Unknown T3D_W: %d for HAAR %d for HADAMARD\n", HAAR, HADAMARD), 1;
 
-	//! Initialize parameters
+	//! Initialize parameters independent of the noise level
 	Parameters prms_1;
 	Parameters prms_2;
-	initializeParameters_1(prms_1, kHard, NfHard, NsHard, NprHard, NbHard, pHard, NHard, dHard, tauHard, lambda3D, T_2D_hard, T_3D_hard, fSigma);
-	initializeParameters_2(prms_2, kWien, NfWien, NsWien, NprWien, NbWien, pWien, NWien, dWien, tauWien,           T_2D_wien, T_3D_wien, fSigma);
+	initConstantParams_1(prms_1, kHard, NfHard, NsHard, NprHard, NbHard, pHard, NHard, dHard, lambda3D, T_2D_hard, T_3D_hard);
+	initConstantParams_2(prms_2,        NfWien, NsWien, NprWien, NbWien, pWien, NWien, dWien,           T_2D_wien, T_3D_wien);
 
 	// Force both buffer to have the same size for now
 	prms_2.Nf = prms_1.Nf;
 
-	//! Preprocessing (KaiserWindow, Threshold, DCT normalization, ...)
+	//! Init Kaiser Window for first step (since it doesn't depend on sigma)
 	int kHard_2 = prms_1.k*prms_1.k;
 	vector<float> kaiser_window_1(kHard_2);
 	vector<float> coef_norm_1(kHard_2);
 	vector<float> coef_norm_inv_1(kHard_2);
 	kaiserWindow(kaiser_window_1, coef_norm_1, coef_norm_inv_1, prms_1.k);
-
-	int kWien_2 = prms_2.k*prms_2.k;
-	vector<float> kaiser_window_2(kWien_2);
-	vector<float> coef_norm_2(kWien_2);
-	vector<float> coef_norm_inv_2(kWien_2);
-	kaiserWindow(kaiser_window_2, coef_norm_2, coef_norm_inv_2, prms_2.k);
 
 	//! Preprocessing of Bior table
 	vector<float> lpd, hpd, lpr, hpr;
@@ -223,7 +232,6 @@ int main(int argc, char **argv)
 	int index = 0;
 	while (vpp_read_frame(in, buffer_input[index], w, h, d))
 	{
-
 		// Update buffer size
 		size_buffer = std::min(size_buffer+1, (int)prms_1.Nf);
 
@@ -232,6 +240,16 @@ int main(int argc, char **argv)
 		vpp_read_frame(sigma_in, sigmadata, sw, sh, sd);
 		sigma = sigmadata[1];
 
+		//! Initialize parameters independent of the noise level
+		initSigmaParams_1(prms_1,        tauHard, sigma);
+		initSigmaParams_2(prms_2, kWien, tauWien, sigma);
+
+		//! Init Kaiser Window for second step
+		int kWien_2 = prms_2.k*prms_2.k;
+		vector<float> kaiser_window_2(kWien_2);
+		vector<float> coef_norm_2(kWien_2);
+		vector<float> coef_norm_inv_2(kWien_2);
+		kaiserWindow(kaiser_window_2, coef_norm_2, coef_norm_inv_2, prms_2.k);
 
 		// Change colorspace (RGB to OPP)
 		if(color_space == 0)

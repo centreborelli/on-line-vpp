@@ -1,7 +1,6 @@
 # C++ source code
 CXXSRC	= main.cpp \
 		vbm3d.cpp \
-		../../vpp/vpp.c \
 		Utilities.cpp \
 		lib_transforms.cpp
 
@@ -50,7 +49,7 @@ endif
 
 # link all the object code
 $(BIN): $(OBJ) $(LIBDEPS)
-	$(CXX) -o $@ $(OBJ) $(LDFLAGS)
+	$(CXX) -o $@ $(OBJ) ../../vpp/vpp.o $(LDFLAGS)
 
 clean:
 	rm *.o $(BIN)

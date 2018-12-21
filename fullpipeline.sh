@@ -30,6 +30,8 @@ function getfifo() {
 
 pono=$(getfifo pono)
 sigmas=$(getfifo sigmas)
+mask=$(getfifo mask)
+beforemask=$(getfifo beforemask)
 
 # setup output files
 if [ "$OUTPUT_INTERMEDIATE" -eq 1 ]; then
@@ -69,6 +71,9 @@ function unband() {
 
 function stabilize() {
 	bin/estadeo $1 -o - \
+	| bin/vp dup - - $beforemask \
+	| bin/vlambda -o $mask 'x 0 >' \
+	| cat $beforemask \
 	| tee $outstab
 }
 
@@ -84,7 +89,7 @@ function denoise_kalman() {
 function denoise_vbm3d() {
 	./src/4_denoising/causal-vbm3d/vbm3d -i $1 -o - -s $sigmas
 }
-function denoise_() {
+function denoise_0() {
 	cat $1
 }
 function denoise() {
@@ -98,7 +103,7 @@ function deblur() {
 }
 
 function tonemap() {
-	./src/6_tonemapping/tonemapping.m $1 - localStd 4 \
+	./src/6_tonemapping/tonemapping.m $1 - $mask localStd 4 \
 	| tee $outtonemap
 }
 

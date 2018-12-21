@@ -6,6 +6,7 @@ all:
 	$(MAKE) -C src/2_stabilization/estadeo
 	$(MAKE) -C src/3_oflow/tvl1flow_3
 	$(MAKE) -C src/4_denoising/kalman
+	$(MAKE) -C src/4_denoising/causal-vbm3d
 	$(MAKE) -C src/5_deblurring/fba-ipol
 
 clean:
@@ -15,6 +16,7 @@ clean:
 	$(MAKE) clean -C src/2_stabilization/estadeo
 	$(MAKE) clean -C src/3_oflow/tvl1flow_3
 	$(MAKE) clean -C src/4_denoising/kalman
+	$(MAKE) clean -C src/4_denoising/causal-vbm3d
 	$(MAKE) clean -C src/5_deblurring/fba-ipol
 
 

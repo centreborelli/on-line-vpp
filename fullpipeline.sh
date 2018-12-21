@@ -7,13 +7,14 @@ dsttmp=$(dirname $dst)_intermediate
 OUTPUT_INTERMEDIATE=${OUTPUT_INTERMEDIATE:-1}
 REMOVE_FPN=${REMOVE_FPN:-0}
 STABILIZE=${STABILIZE:-1}
-DENOISE=${DENOISE:-0}
+DENOISE=${DENOISE:-1}
 DEBLUR=${DEBLUR:-0}
 
 echo "Running full pipeline for sequence $src"
 echo "		- fixed noise removal is $REMOVE_FPN"
 echo "		- stabilization is $STABILIZE"
 echo "		- debluring is $DEBLUR"
+echo "		- denoising is $DENOISE"
 
 # create a temporary directory for the named pipes
 tmp=$(mktemp -d)

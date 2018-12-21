@@ -1,6 +1,7 @@
 CFLAGS ?= -march=native -O3 -Wall -Wextra
 CFLAGS += -I.
 CFLAGS += -DVPP_OUTPUT_DOT
+CFLAGS += -fPIC
 LDLIBS = -lm
 
 ifeq (,$(shell $(CC) $(CFLAGS) -dM -E -< /dev/null | grep __STDC_VERSION_))

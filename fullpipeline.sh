@@ -7,7 +7,7 @@ dsttmp=$(dirname $dst)_intermediate
 OUTPUT_INTERMEDIATE=${OUTPUT_INTERMEDIATE:-1}
 REMOVE_FPN=${REMOVE_FPN:-0}
 STABILIZE=${STABILIZE:-1}
-DENOISE=${DENOISE:-1}
+DENOISE=${DENOISE:-kalman} # 0, kalman or vbm3d
 DEBLUR=${DEBLUR:-0}
 
 echo "Running full pipeline for sequence $src"
@@ -28,10 +28,9 @@ function getfifo() {
 	echo $f
 }
 
-noisy=$(getfifo noisy)
-oflow=$(getfifo oflow)
 pono=$(getfifo pono)
 sigmas=$(getfifo sigmas)
+mask=$(getfifo mask)
 
 # setup output files
 if [ "$OUTPUT_INTERMEDIATE" -eq 1 ]; then
@@ -70,16 +69,31 @@ function unband() {
 }
 
 function stabilize() {
+	beforemask=$(getfifo beforemask)
 	bin/estadeo $1 -o - \
+	| bin/vp dup - - $beforemask \
+	| bin/vlambda - -o $mask 'x 0 >' \
+	| cat $beforemask \
 	| tee $outstab
 }
 
-function denoise() {
+function denoise_kalman() {
+	noisy=$(getfifo noisy)
+	oflow=$(getfifo oflow)
 	bin/vp dup $1 $noisy - \
 	| bin/tvl1flow - - $oflow_params \
 	| bin/vp dup - $oflow - \
 	| bin/vlambda - "x(0,0)[0] x(-1,0)[0] - x(0,0)[1] x(0,-1)[1] - + 0.5 > 255 *" -o - \
-	| bin/kalman -i $noisy -o $oflow -k - -s $sigmas -d - -v \
+	| bin/kalman -i $noisy -o $oflow -k - -s $sigmas -d - -v
+}
+function denoise_vbm3d() {
+	./src/4_denoising/causal-vbm3d/vbm3d -i $1 -o - -s $sigmas
+}
+function denoise_0() {
+	cat $1
+}
+function denoise() {
+	denoise_$DENOISE $@ \
 	| tee $outdenoise
 }
 
@@ -89,7 +103,7 @@ function deblur() {
 }
 
 function tonemap() {
-	./src/6_tonemapping/tonemapping.m $1 - localStd 4 \
+	./src/6_tonemapping/tonemapping.m $1 - $mask localStd 4 \
 	| tee $outtonemap
 }
 
@@ -102,11 +116,6 @@ fi
 if [ "$STABILIZE" -eq 0 ]; then
 	function stabilize() {
 		tee $outstab
-	}
-fi
-if [ "$DENOISE" -eq 0 ]; then
-	function denoise() {
-		tee $outdenoise
 	}
 fi
 if [ "$DEBLUR" -eq 0 ]; then

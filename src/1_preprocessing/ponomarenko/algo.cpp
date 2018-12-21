@@ -457,7 +457,7 @@ void algorithm(AlgoOptions const& opts, CImage& input,
 
   // Parallelization config
   #ifdef _OPENMP
-  omp_set_num_threads(omp_get_num_procs());
+  //omp_set_num_threads(omp_get_num_procs());
   #endif
 
   // Get image properties
@@ -504,7 +504,7 @@ void algorithm(AlgoOptions const& opts, CImage& input,
   int nembed[2] = {w,w};
   
   #ifdef _OPENMP
-  fftwf_plan_with_nthreads(omp_get_num_procs());
+  //fftwf_plan_with_nthreads(omp_get_num_procs());
   #endif
 
   fftwf_r2r_kind kindTable[2] = {FFTW_REDFT10, FFTW_REDFT10};

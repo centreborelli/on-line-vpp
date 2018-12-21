@@ -1,6 +1,7 @@
 CFLAGS ?= -march=native -O3 -Wall -Wextra
 CFLAGS += -I.
 CFLAGS += -DVPP_OUTPUT_DOT
+CFLAGS += -DVPP_OUTPUT_TIME
 CFLAGS += -fPIC
 LDLIBS = -lm
 

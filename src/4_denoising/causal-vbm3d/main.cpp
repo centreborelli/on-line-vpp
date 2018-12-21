@@ -20,7 +20,9 @@
 #include <algorithm>
 
 #include "vbm3d.h"
+extern "C" {
 #include "vpp.h"
+}
 #include "Utilities.h"
 #include "cmd_option.h"
 #include "lib_transforms.h"

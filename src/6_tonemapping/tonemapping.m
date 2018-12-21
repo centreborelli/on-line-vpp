@@ -5,17 +5,18 @@
 
 % Get list of arguments passed to script
 arg_list = argv();
-if nargin < 2 || nargin > 4
+if nargin < 3 || nargin > 5
     error(['Incorrect number of arguments.\n' ...
-        'Usage: tonemapping.m input output [method [method-param]]\n']);
+        'Usage: tonemapping.m input output mask [method [method-param]]\n']);
 end
 inputName = arg_list{1}; % can be '-' for stdin
 outputName = arg_list{2}; % can be '-' for stdout
-if nargin < 3
+maskName = arg_list{3};
+if nargin < 4
     method = 'localStd';
     increaseEps = 2;
 else
-    method = arg_list{3};
+    method = arg_list{4};
     if nargin < 4
         switch method
             case 'ratioStd'
@@ -26,9 +27,9 @@ else
     else
         switch method
             case 'ratioStd'
-                ratioTarget = str2double(arg_list{4});
+                ratioTarget = str2double(arg_list{5});
             case 'localStd'
-                increaseEps = str2double(arg_list{4});
+                increaseEps = str2double(arg_list{5});
         end
     end
 end
@@ -52,6 +53,8 @@ pkg load image
 %%% Input
 inputHandle = vpp_init_input(inputName);
 if ~inputHandle, error('cannot load input %s',inputName); end
+maskHandle = vpp_init_input(maskName);
+if ~maskHandle, error('cannot load input %s',maskName); end
 
 %%% Define size of output
 H = inputHandle(1); % height of input
@@ -78,6 +81,7 @@ gamma   = 1;    % evolution of gamma over the scales: eps <-- eps / scale^gamma
 
 %%% Get first frame; then loop until there is no frame available
 u = double(vpp_read_frame(inputHandle));
+mask = vpp_read_frame(maskHandle) > 0;
 n = 1;
 
 %%% Initialiations
@@ -87,7 +91,6 @@ switch method
         step = NaN;
 
     case 'localStd'
-        mask = u > 128; mask = imopen(mask,true(3));
         w = 4;
         k = ones(w*2+1) / (w*2+1)^2;
         localVar = imfilter(u.^2,k,'symmetric') - imfilter(u,k,'symmetric').^2;
@@ -98,8 +101,7 @@ end
 while ~isscalar(u)
 
     %%% compute only statistics on valid pixels
-    %%% u=0 happens due to the stabilization
-    mask = u > 128; mask = imopen(mask,true(3));
+    mask = vpp_read_frame(maskHandle) > 0;
 
     %%% Place input in a range where squared values does not explode
     %%% MGF does not need the input to be in a specific range, yet large values

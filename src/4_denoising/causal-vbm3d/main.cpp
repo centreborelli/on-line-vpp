@@ -35,7 +35,7 @@ extern "C" {
 #define BIOR      5
 #define HADAMARD  6
 #define HAAR      7
-#define NONE      8
+#define NONE     -1
 
 using namespace std;
 
@@ -54,8 +54,8 @@ void initConstantParams_1(
 ,	const int Nmax
 ,	const int d
 ,	const float lambda
-,	const unsigned T_2D
-,	const unsigned T_3D
+,	const int T_2D
+,	const int T_3D
 ){
 	const float n = 1./255./255.;
 	prms.k    = (k    < 0) ? 8 : k;
@@ -80,8 +80,8 @@ void initConstantParams_2(
 ,	const int st
 ,	const int Nmax
 ,	const int d
-,	const unsigned T_2D
-,	const unsigned T_3D
+,	const int T_2D
+,	const int T_3D
 ){
 	const float n = 1./255./255.;
 	prms.Rf   = (Rf   < 0) ? 4 : Rf;
@@ -128,7 +128,10 @@ void initSigmaParams_2(
 int main(int argc, char **argv)
 {
 	clo_usage("Causal version of the VBM3D video denoising method");
-	clo_help(" NOTE: Input (<) and output (>) sequences have to be vpp pipes.\n");
+	clo_help(" NOTE: Input (<) and output (>) sequences have to be vpp pipes.\n"
+			   "       A default value of -1 means that the default value will \n"
+				"       be assigned automatically as a function of sigma. Default\n"
+				"       values are tuned for standard videos in the [0,255] range.\n");
 
 	using std::string;
 	const string  input_path = clo_option("-i", "-", "< input pipe");
@@ -151,11 +154,11 @@ int main(int argc, char **argv)
 	const float tauH    = clo_option("-tauH"   ,-1., "< distance threshold");
 	const float tauW    = clo_option("-tauW"   ,-1., "< distance threshold");
 	const float lambdaH = clo_option("-lambdaH",-1., "< parameter for the thresholding operator");
+	const int   T2DH    = clo_option("-T2DH", NONE , "< Spatial transform for hard thresholding step");
+	const int   T2DW    = clo_option("-T2DW", NONE , "< Spatial transform for Wiener filtering step");
+	const int   T3DH    = clo_option("-T3DH", NONE , "< 3rd dimension transform for hard thresholding step");
+	const int   T3DW    = clo_option("-T3DW", NONE , "< 3rd dimension transform for Wiener filtering step");
 	const unsigned color_space  =  (unsigned) clo_option("-color", 0 , "< color space");
-	const unsigned T2DH  = (unsigned) clo_option("-T2DH", NONE , "< Spatial transform for hard thresholding step");
-	const unsigned T2DW  = (unsigned) clo_option("-T2DW", NONE , "< Spatial transform for Wiener filtering step");
-	const unsigned T3DH  = (unsigned) clo_option("-T3DH", NONE , "< 3rd dimension transform for hard thresholding step");
-	const unsigned T3DW  = (unsigned) clo_option("-T3DW", NONE , "< 3rd dimension transform for Wiener filtering step");
 
 	//! Check inputs
 	if (input_path == "")

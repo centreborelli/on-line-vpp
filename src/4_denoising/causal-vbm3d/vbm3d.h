@@ -188,10 +188,7 @@ void wiener_filtering_haar(
 ,   std::vector<float> &weight_table
 );
 
-/** ---------------------------------- **/
-/** - Preprocessing / Postprocessing - **/
-/** ---------------------------------- **/
-//! Preprocess coefficients of the Kaiser window and normalization coef for the DCT
+//! Coefficients of the Kaiser window and normalization coef for the DCT
 void kaiserWindow(
     std::vector<float> &kaiserWindow
 ,   std::vector<float> &coef_norm

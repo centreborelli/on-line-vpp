@@ -1,13 +1,13 @@
 # Video Restoration Pipeline
 
 This an *on-line* video processing pipeline with the objective of enhancing the quality of a video, built around [vpp](https://github.com/kidanger/vpp). By on-line we mean that it works a frame-by-frame. It consists of a series of processes connected by unix pipes. These are some of the available tools:
-- video stabilization **TODO**
+- video stabilization
 - optical flow
-- noise estimation **TODO**
-- band noise removal **TODO**
-- fixed pattern noise removal **TODO**
+- noise estimation
+- band noise removal
+- fixed pattern noise removal
 - AWGN denoising
-- tone mapping **TODO**
+- tone mapping
 
 
 The following pipeline is an example:
